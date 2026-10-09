@@ -1,0 +1,226 @@
+{
+  "version": 4,
+  "step": "kb",
+  "owner": "active-orchestrator",
+  "discovery": {
+    "created_by": "discovery-research",
+    "research_date": "2026-10-01",
+    "sources": [
+      "https://bilog.com.ar/",
+      "https://www.clinia.com.ar/odontologia",
+      "https://www.argentina.gob.ar/plataformas-aprobadas-por-el-ministerio-de-salud-de-la-nacion",
+      "https://dentalcore.app/",
+      "https://dentalsoft.com.ar/",
+      "https://dental.delriotech.com.ar/",
+      "https://doctorya.com.ar/",
+      "https://odonthia.com/planes",
+      "https://dentiqa.app/ar",
+      "https://www.liviodental.com/",
+      "https://flap.com.ar/odontologos",
+      "https://sisturnos.com/",
+      "https://odontoly.com/",
+      "https://sigo.com.ar/",
+      "https://dentatools.co/ar/precios",
+      "https://www.softwaredentalink.com/mx/",
+      "https://medware.com.mx/software-para-dentistas",
+      "https://www.simplesdental.com/",
+      "https://www.santesistemas.io/sante-odonto",
+      "https://www.dentalsoftweb.com/",
+      "https://tab32.com/pricing/",
+      "https://simplybook.me/en/book-online-video-meetings",
+      "https://www.arca.gob.ar/facturacion/regimen-general/requisitos.asp",
+      "https://www.arca.gob.ar/ws/documentacion/certificados.asp",
+      "https://www.mercadopago.com.ar/herramientas-para-vender/check-out",
+      "https://www.argentina.gob.ar/normativa/nacional/ley-26529-160432/actualizacion",
+      "https://servicios.infoleg.gob.ar/infolegInternet/anexos/60000-64999/64790/norma.htm"
+    ],
+    "sources_type": "open-web-discovery",
+    "sources_note": "El usuario no aportó URLs, por lo que no se invocó web-scraper y no existen archivos en discovery/sources/. Toda la evidencia está consolidada en discovery/discovery.md con marcador [C]/[A]/[NE] por dato.",
+    "competitors": [
+      { "name": "Bilog", "empresa": "Bilog", "pais": "AR", "segmento": "consultorio a cadena, auditoria de obras sociales", "url": "https://bilog.com.ar/", "precio": "no publicado", "notas_file": "discovery/discovery.md#4" },
+      { "name": "OdontoClinIA", "empresa": "Emprinet 4.0", "pais": "AR", "segmento": "consultorio a cadena, PAMI y SUMAR+", "url": "https://www.clinia.com.ar/odontologia", "precio": "no publicado", "notas_file": "discovery/discovery.md#4" },
+      { "name": "DentalCore", "empresa": "DentalCore (CUIT 20-40568642-3)", "pais": "AR", "segmento": "consultorio a multi-sucursal", "url": "https://dentalcore.app/", "precio": "USD 50/mes + USD 10 por usuario", "notas_file": "discovery/discovery.md#4" },
+      { "name": "DentalSoft", "empresa": "DentalSoft", "pais": "AR", "segmento": "consultorio a clinica multi-sucursal", "url": "https://dentalsoft.com.ar/", "precio": "$30.000 / $60.000 por mes + $10.000 por profesional", "notas_file": "discovery/discovery.md#4" },
+      { "name": "DentalSaaS", "empresa": "DelRioTech SAS", "pais": "AR", "segmento": "consultorio a clinica de alto volumen", "url": "https://dental.delriotech.com.ar/", "precio": "$59.000 / $149.000 / $349.000 por mes", "notas_file": "discovery/discovery.md#4" },
+      { "name": "DoctorYa", "empresa": "Sistemasdev SDEV (CUIT 20-28793714-9)", "pais": "AR", "segmento": "profesional a multisede", "url": "https://doctorya.com.ar/", "precio": "$9.000 / $25.000 / $90.000 por mes", "notas_file": "discovery/discovery.md#4" },
+      { "name": "Odonthia", "empresa": "Genera Impacto", "pais": "AR", "segmento": "odontologo independiente", "url": "https://odonthia.com/", "precio": "nucleo gratis ilimitado + $20.900 / $46.900", "notas_file": "discovery/discovery.md#4" },
+      { "name": "Dentiqa", "empresa": "Violet Wave", "pais": "LATAM", "segmento": "clinica PyME a grupo/cadena", "url": "https://dentiqa.app/ar", "precio": "USD 89 / 149 / 249 (cobra en USD)", "notas_file": "discovery/discovery.md#4" },
+      { "name": "Livio", "empresa": "Livio", "pais": "AR", "segmento": "clinicas con facturacion ARS 5M-20M/mes", "url": "https://www.liviodental.com/", "precio": "$99.000 por mes", "notas_file": "discovery/discovery.md#4" },
+      { "name": "FLAP", "empresa": "TuWebmaster", "pais": "AR", "segmento": "consultorio a clinica y equipos", "url": "https://flap.com.ar/odontologos", "precio": "Gratis (30 turnos) / $12.000 / $39.900 / $68.900", "notas_file": "discovery/discovery.md#4" },
+      { "name": "SisTurnos", "empresa": "SisTurnos", "pais": "AR", "segmento": "profesional a clinica (hasta 10 prof.)", "url": "https://sisturnos.com/", "precio": "$19.000 / $49.000 por mes", "notas_file": "discovery/discovery.md#4" },
+      { "name": "Odontoly", "empresa": "Odontoly", "pais": "AR", "segmento": "consultorio 1 sillon", "url": "https://odontoly.com/", "precio": "USD 149,99 por mes + instalacion USD 0", "notas_file": "discovery/discovery.md#4" },
+      { "name": "Sigo", "empresa": "Hosting Bahia", "pais": "AR", "segmento": "consultorio a clinica", "url": "https://sigo.com.ar/", "precio": "$25.000 por mes (1 profesional)", "notas_file": "discovery/discovery.md#4" },
+      { "name": "Dentatools", "empresa": "Dentatools", "pais": "AR", "segmento": "consultorio particular", "url": "https://dentatools.co/ar/", "precio": "$30.000 por mes (hasta 3) + $8.000 por profesional", "notas_file": "discovery/discovery.md#4" },
+      { "name": "Dentalink", "empresa": "Healthatom MX", "pais": "MX", "segmento": "consultorio a multicentro", "url": "https://www.softwaredentalink.com/mx/", "precio": "no publicado", "notas_file": "discovery/discovery.md#4" },
+      { "name": "OdontoWare", "empresa": "Medware Digital Consulting", "pais": "MX", "segmento": "consultorio a grupo (18 dentistas/5 sedes)", "url": "https://medware.com.mx/software-para-dentistas", "precio": "MXN 599 / 1499 / 4499", "notas_file": "discovery/discovery.md#4" },
+      { "name": "Simples Dental", "empresa": "Simples Dental", "pais": "BR", "segmento": "consultorio a franquicias", "url": "https://www.simplesdental.com/", "precio": "BRL 149,90 / 249,90 / 349,90 (anual)", "notas_file": "discovery/discovery.md#4" },
+      { "name": "DentalSoftWeb", "empresa": "SuWebJK", "pais": "CO", "segmento": "consultorio a IPS y hospital", "url": "https://www.dentalsoftweb.com/", "precio": "USD 362,50 por ano (500 historias, 6 usuarios)", "notas_file": "discovery/discovery.md#4" },
+      { "name": "tab32", "empresa": "tab32", "pais": "US", "segmento": "1-3 profesionales a grupos", "url": "https://tab32.com/pricing/", "precio": "USD 125/mes anio 1, luego USD 225", "notas_file": "discovery/discovery.md#4" },
+      { "name": "SimplyBook.me", "empresa": "SimplyBook.me (team.blue)", "pais": "CY", "segmento": "agenda generica multiespecialidad", "url": "https://simplybook.me/en/book-online-video-meetings", "precio": "EUR 0 a 49,90 por mes", "notas_file": "discovery/discovery.md#4" }
+    ],
+    "problema": "El consultorio y la clinica odontologica argentina resuelven turnos con un mosaico que no se sostiene: agenda que no habla con la ficha clinica, WhatsApp manual no auditable, obras sociales liquidadas en planillas y facturacion fiscal que muchas clinicas no emiten. La gestion de turnos ya no es un problema (20 de 20 sistemas la tienen); el problema abierto es la capa de compliance y negocio especifico del odontologo argentino: facturacion electronica ante ARCA efectiva (ningun competidor publica evidencia tecnica de emision; Adiasoft confiesa que en Argentina no emite nada, Dentatools lo niegas, Odontoly lo tiene como Proximamente), obra social como producto y no como etiqueta (solo Bilog, DentalSaaS y DentalSoft tienen resolucion operativa real), e historia clinica legalmente defendible conforme a la Ley 26.529.",
+    "usuarios": [
+      "Odontologo / director clinico: agenda propia, evolucion, odontograma, presupuesto, firma digital",
+      "Asistente / recepcion: toma turnos, cobra senas, confirma, agenda el alta de pacientes (mayor volumen de interaccion diaria)",
+      "Administrador de clinica: caja, liquidaciones a profesionales, liquidaciones de obras sociales, reportes",
+      "Profesional asociado: ve su agenda y cobra sus comisiones",
+      "Paciente: reserva, confirma, cancela, recibe recordatorios, firma consentimientos, accede a su copia de historia clinica",
+      "Laboratorio dental (solo en algunos productos): ordenes, plazos, cuenta corriente",
+      "Obra social / prepaga / agente de assurance: emisor de autorizacion y de facturacion a cobrar"
+    ],
+    "casos_de_uso": [
+      "Como odontologo, quiero agendar por sillon con duracion variable segun la prestacion para que la agenda refleje el tiempo real de atencion y no sobre-reserve horas que no existen.",
+      "Como recepcion, quiero que el paciente reserve solo desde un enlace o QR las 24 h para dejar de coordinar turnos por telefono.",
+      "Como recepcion, quiero recordatorios y confirmaciones automaticas por WhatsApp que actualicen la agenda sin que nadie toque un boton.",
+      "Como odontologo, quiero registrar la evolucion con odontograma y periodontograma por pieza para tener el estado clinico real del paciente y compararlo en el tiempo.",
+      "Como administrador, quiero emitir comprobante electronico ante ARCA y liquidar a profesionales y obras sociales para dejar de liquidar en planillas y facturar en negro.",
+      "Como paciente, quiero descargar mi copia de historia clinica y firmar consentimientos desde el celular para ejercer el derecho de acceso que la Ley 26.529 me garantiza."
+    ],
+    "funcionalidades_necesarias": {
+      "status": "PROPUESTA, no acordada: el usuario dejo abierta la decision de segmento (P1) y de alcance (P2).",
+      "items": [
+        "Agenda por profesional y por sillon/box, con duracion variable por prestacion, anti-solapamiento, sobreturnos, bloqueos y feriados",
+        "Reserva online 24/7 (enlace + QR) con confirmacion, cancelacion, reprogramacion y lista de espera",
+        "Recordatorios y confirmaciones por WhatsApp Business API oficial + email, con respuesta que actualice la agenda",
+        "Ficha clinica con odontograma FDI (permanente + primaria), periodontograma, imagenes/radiografias, presupuestos y planes de tratamiento",
+        "Caja, cobros, senas, cuentas por cobrar y liquidacion por profesional",
+        "Facturacion electronica ARCA end-to-end: comprobante A/B/C derivado del estado del cliente (no elegido a mano), FE + Nota de Credito + Nota de Debito, token WSAA, certificado X.509 por tenant, y onboarding que resuelva los 3 requisitos de clase A",
+        "Consentimiento informado con el contenido del art. 5 de la Ley 26.529, firma digital, versionado y constancia de revocacion (art. 10)",
+        "Historia clinica inmutable con audit trail, retencion >=10 anos y copia autenticada en <=48 h como autoservicio (arts. 12-18)",
+        "RBAC, politica de privacidad con responsable/encargado (Ley 25.326) y declaracion ante AAIP",
+        "Migracion desde Excel / Dentalink / sistema previo con dedupe"
+      ],
+      "diferenciadores_propuestos": [
+        "Sillon como unidad de verdad en modelo de datos y reportes",
+        "Evidencia tecnica publica de un comprobante ARCA emitido",
+        "Workspace de obras sociales con nomenclador por convenio y estado de cuenta con Cuota Transparente (Res. SSS 1725/2025)",
+        "Costo de WhatsApp visible en el precio, sin packs de consumibles",
+        "Precio en pesos publicado desde el dia uno",
+        "Modelo de datos FHIR-ready desde el origen",
+        "Migracion como servicio con garantia de dedupe"
+      ],
+      "diferidos_propuestos": [
+        "Portal del paciente y teleodontologia",
+        "CDSS / IA clinica",
+        "Dictado estructurante por voz",
+        "CRM de captacion y campanas",
+        "Gestion de laboratorios y protesis",
+        "Multi-sucursal tipo DSO",
+        "Facturacion a prepagas con modelo RIPS-like"
+      ]
+    },
+    "funcionalidades_opcionales": {
+      "status": "PROPUESTA, no acordada (mismo criterio que funcionalidades_necesarias).",
+      "items": [
+        "Migracion QR-linked a WhatsApp como atajo de bajo costo",
+        "Integracion con Google Calendar bidireccional",
+        "Respaldo offline / local-first",
+        "Point of venta de mostrador",
+        "Control de stock e insumos",
+        "Modulo de laboratorio dental",
+        "Evaluacion de satisfaccion y NPS",
+        "Score de credito",
+        "Visualizaciones avanzadas de analitica"
+      ]
+    },
+    "reglas_de_negocio": {
+      "status": "PARCIAL: las reglas que se desprenden de la normativa son obligatorias; las de negocio quedan abiertas.",
+      "items_no_negociables_legales": [
+        "El tipo de comprobante se deriva del estado fiscal del cliente: obra social -> A, monotributista -> C, consumidor final responsable inscripto -> B, monotributista a RI -> A",
+        "La historia clinica es cronologica, foliada, completa, inalterable y con guarda minima de 10 anos desde la ultima actuacion (Ley 26.529 arts. 12, 16, 18)",
+        "El paciente es titular de su historia y recibe copia autenticada en <=48 h (art. 14); la negativa habilita la accion directa de habeas data (art. 20)",
+        "Los datos de salud son datos sensibles (Ley 25.326 art. 2) y su cesion a obras sociales, prepagas o laboratorios exige consentimiento expreso (art. 11)",
+        "La atencion electronica exige garantias de integridad, autenticidad, inalterabilidad, perdurabilidad y recuperabilidad (art. 13)",
+        "La odontologia debe registrarse en nomenclatura binaria de dos digitos (art. 15(f)) con denticion permanente y primaria"
+      ],
+      "items_abiertos": [
+        "Anticipacion minima para cancelar sin penalidad",
+        "Politica de senas y su devolucion",
+        "Reglas de sobreturnos y lista de espera",
+        "Comision por profesional y su forma de calculo"
+      ]
+    },
+    "integraciones": {
+      "status": "Obligatorias por ley o por mercado, ya verificadas; el stack concreto queda para kb-creator.",
+      "items": [
+        "ARCA: certificado X.509 por tenant, WSAA, FE + NC + ND, alta de clase A con solvencia patrimonial",
+        "Mercado Pago: comisiones verificadas 1,49% a 35 dias, 3,39% a 18, 4,39% a 10, 6,29% al instante, todas + IVA 21%",
+        "WhatsApp Business API oficial (COSTO NO VERIFICABLE: la pagina oficial de precios es JS-rendered y la de developers devolvio HTTP 400)",
+        "Google Calendar (sincronizacion)",
+        "PUCO / SSS para cobertura de obras sociales (claim [A] de ClinIA, no verificado)",
+        "RENAPER (claim [A] de ClinIA, no verificado)",
+        "HL7 FHIR y ReNaPDiS para recetario electronico (ClinIA ID 248 verificado en el listado oficial)",
+        "Nomencladores por obra social: no existe nomenclatura unica, cada agente tiene su catalogo; es el costo operativo dominante"
+      ]
+    },
+    "restricciones": {
+      "status": "Restricciones de negocio PENDIENTES del usuario; las derivadas de la investigacion son hechos del contexto.",
+      "derivadas_de_investigacion": [
+        "Mantenimiento normativo es costo recurrente, no proyecto cerrado: al menos RG 5762/2025, RG 5830/2026 y RG 5866/2026 (vigencia 01/07/2026)",
+        "Multitenancy con identidad fiscal propia por clinica: el software no puede emitir bajo su propio certificado",
+        "Los precios del relevamiento reflejan el 2026-10-01 y tienen vida corta en un mercado inflationary",
+        "No existe estandar nacional argentino de nomenclatura odontologica de procedimientos"
+      ],
+      "de_usuario": []
+    },
+    "riesgos": [
+      "SUPUESTO SIN PROBAR (riesgo #1): el usuario no define el segmento. Sin P1 resuelto, KB, roadmap y MVP son hipotesis; todo el alcance propuesto queda sin confirmar.",
+      "SUPUESTO SIN PROBAR: que el hueco de compliance ARCA sea explotable comercialmente. Puede que el consultorio prefiera no facturar formalmente antes que aprender a tramitar. No validado con usuarios.",
+      "RIESGO DE PLAZO: la complejidad regulatoria (Ley 26.529 + 25.326 + clase A de ARCA) puede demorar el lanzamiento mas que la parte tecnica. Es el riesgo #1 segun el relevamiento: 3 de los 5 vacios son legales.",
+      "SUPUESTO SIN PROBAR: que el precio Full-Featured mas bajo (DentalCore, USD 50/mes) sea sostenible. Es el dato mas disruptivo del relevamiento y merece validacion comercial directa.",
+      "RIESGO DE CLAIMS FALSOS DEL MERCADO: si DentalCore o ClinIA implementan de verdad lo que afirman (FHIR, 17 motores CDSS, 20+ obras sociales), la brecha se reduce o desaparece. No descartado.",
+      "RIESGO DE DEPENDENCIA DE META: cualquier producto que use QR linking en vez de API oficial expone la sesion de WhatsApp del consultorio a un ToS de Meta que puede cambiar.",
+      "RIESGO DE COSTO OPERATIVO RECURRENTE: cada obra social tiene su catalogo y sus reglas de claim; no hay estandarizacion nacional que lo resuelva."
+    ],
+    "preguntas_abiertas": [
+      "P1 (SIN RESPONDER) Segmento inicial: a) odontologo independiente / consultorio 1-2 sillones; b) clinica PyME 3-10 sillones multiprofesional; c) cadena / multi-sucursal. Recomendacion del analisis: (b).",
+      "P2 (SIN RESPONDER) Alcance de obras sociales y facturacion en el MVP: a) ARCA real desde el dia 1 y obras sociales diferidas; b) ambos desde el dia 1; c) ninguno desde el dia 1. Recomendacion: (a).",
+      "P3 (SIN RESPONDER) Modelo comercial: a) freemium con nucleo clinico gratis + pago por consumo; b) suscripcion unica en pesos todo incluido sin packs; c) sin gratis, precio en USD. Recomendacion: (b).",
+      "P4 (SIN RESPONDER) WhatsApp: a) API oficial; b) QR linking; c) QR en plan chico y API desde Pro. Recomendacion: (a) para el nucleo, con el costo visible en el plan.",
+      "P5 (SIN RESPONDER) Riesgo que mas preocupa: a) quedarse en otra agenda; b) la complejidad regulatoria demora el lanzamiento; c) el mercado ya esta saturado de players con nucleo gratis. Recomendacion: (b).",
+      "ALCANCE DEL DECRETO 393/2023: no se verifico si obliga a consultorios privados a registrarse en el Registro de Dominios de Interoperabilidad en Salud.",
+      "SISTEMA BINARIO DE DOS DIGITOS: no se transcribio la reglamentacion del art. 15(f) de la Ley 26.529; no se sabe si el sistema exigido es FDI o alternativa. Punto a cerrar ANTES de fijar el modelo de datos.",
+      "ESTADO DEL PROYECTO DE REFORMA DE LA LEY 25.326 en el Congreso: la AAIP publica un proyecto oficial pero no se verifico su estado de tramite.",
+      "ARANCELES: certificado X.509 de ARCA e inscripcion en el Registro Nacional de Bases de Datos (sin dato publicado).",
+      "TARIFAS DE WHATSAPP BUSINESS API EN ARGENTINA: sin dato verificable; modelar como costo variable con techo.",
+      "ALCANCE DE LA RG 5866/2026: si alcanza a los odontologos monotributistas antes de la fecha de salida del producto.",
+      "VERIFICACIONES COMERCIALES PENDIENTES: validar el precio y el alcance real de DentalCore (USD 50/mes); cuanto de lo que afirma ClinIA fuera del recetario existe en produccion; resenas externas verificadas (solo se pudo verificar Reclame Aqui 9.6/10 de Simples Dental)."
+    ],
+    "top_competitors_for_demo": ["OdontoClinIA (ClinIA)", "DentalCore", "Bilog", "DentalSoft (AR)", "Dentalink (MX)"],
+    "ux_reference_products": ["DentalSoft", "DentalCore", "Dentiqa"],
+    "market_gaps": [
+      "Facturacion electronica ARCA real y verificable con onboarding de clase A",
+      "Obra social como producto: workspace por convenio con nomenclador propio y Cuota Transparente (Res. SSS 1725/2025)",
+      "Copia autenticada de historia clinica en <=48 h como autoservicio (Ley 26.529 art. 14)",
+      "Sillon como unidad de verdad en modelo de datos y reportes de ocupacion",
+      "Pricing sin packs de consumibles y con costo de WhatsApp visible"
+    ]
+  },
+  "kb": {
+    "created_by": "kb-creator",
+    "source": "interactive",
+    "discovery": {
+      "problem": "Las clinicas odontologicas PyME de 3 a 10 sillones en Argentina no pueden cumplir la capa normativa que el pais les exige (facturacion electronica con comprobante A ante ARCA, historia clinica defendible bajo Ley 26.529 y Ley 25.326), porque los 20 sistemas relevantes del mercado prometen esa capa sin evidencia tecnica verificable; este sistema la provee con trazabilidad auditable.",
+      "system_type": "saas_multi_tenant",
+      "domain": "salud / odontologia (gestion de consultorio dental)",
+      "scale": "multi_tenant",
+      "stack": "TypeScript end-to-end: Next.js 15 + NestJS 11 + PostgreSQL 16 + Redis 7 (BullMQ) + Prisma, deploy en nube (AWS o GCP)",
+      "needs_infra": true
+    },
+    "files": [
+      "knowledge-base/README.md",
+      "knowledge-base/01_vision_y_objetivos.md",
+      "knowledge-base/02_descripcion_general.md",
+      "knowledge-base/03_actores_y_roles.md",
+      "knowledge-base/04_modelo_de_datos.md",
+      "knowledge-base/05_reglas_de_negocio.md",
+      "knowledge-base/06_funcionalidades.md",
+      "knowledge-base/07_flujos_principales.md",
+      "knowledge-base/08_arquitectura_propuesta.md",
+      "knowledge-base/09_decisiones_y_supuestos.md",
+      "knowledge-base/10_preguntas_abiertas.md",
+      "knowledge-base/11_facturacion_arca.md",
+      "knowledge-base/12_historia_clinical_y_compliance.md"
+    ]
+  }
+}
