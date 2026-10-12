@@ -100,19 +100,19 @@ Monorepo con 3 paquetes + 1 infra. Despliegue: **AWS o GCP, no on-prem** (DD-05)
 
 | Servicio | Propósito | Tipo | Criticidad | Estado |
 |---------|-----------|------|-----------|--------|
-| **ARCA** (ex AFIP) — WSAA | Autenticación de applet, token de acceso | SOAP/XML | **Bloqueante** | v0.1 |
+| **ARCA** (ex AFIP) — WSAA | Autenticación de la aplicación, token de acceso | SOAP/XML | **Bloqueante** | v0.1 |
 | **ARCA** — FE (facturación electrónica) | Emisión de comprobantes A y B, consulta de estado | SOAP/XML | **Bloqueante** | v0.1 |
 | **WhatsApp Business Cloud API** | Confirmación de turnos, recordatorios 24h/2h, recuperación de cancelaciones | REST + webhook (Meta) | Alta | v0.1 |
 | **Email transaccional** | Fallback de confirmación, copias autenticadas, invoices | SMTP/API | Alta | v0.1 |
 | **Object storage S3** | PDFs firmados, copias autenticadas, exportaciones, (futuro) radiografías | REST + SDK | Alta | v0.1 |
-| **Mercado Pago** | Cobro de suscripción del SaaS (NOS billing del paciente) | REST | Media | v0.2 — ver SU-06 |
+| **Mercado Pago** | Cobro de suscripción del SaaS (NO facturación al paciente) | REST | Media | v0.2 — ver SU-06 |
 | **OpenTelemetry / Sentry** | Trazas y errores con contexto de tenant | OTLP | Media | v0.1 |
-| **Proveedor de firma digital** | Firma de consentimientos (d.drawing / UAI) | API | Baja | v0.2 |
+| **Proveedor de firma digital** | Firma de consentimientos (firma de PDF / UAI) | API | Baja | v0.2 |
 | **Bioimagen / PACS** | Radiografías | DICOM | — | **Fuera de alcance v0.1** |
 
 ### Proveedor de email
 
-**No elegido.** Debe soportar bounce handling y排行 deliverability en Argentina. Candidato
+**No elegido.** Debe soportar bounce handling y buena deliverability en Argentina. Candidato
 default: Postmark. Registrado en [`10_preguntas_abiertas.md`](10_preguntas_abiertas.md) — PQ-08.
 
 ## API REST (superficie)

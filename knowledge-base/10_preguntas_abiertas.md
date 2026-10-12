@@ -21,7 +21,7 @@ correctas para *escribir* la KB, pero sí para *construir* el producto.
 
 **Documento A (01_vision) dice**: el MVP es los 10 imprescindibles con compliance incluido.
 
-**Documento B (SU-01, SU-02) dice**: equipo de 2–4 devs sin deadline.
+**Documento B (SU-01, SU-02) dice**: equipo de 1 dev con deadline 2026-10-23 (validado 2026-10-09).
 
 **Impacto**: si el equipo es de 1 persona o hay deadline, "los 10 imprescindibles" puede ser
 inalcanzable. DD-03 asumía que se puede entregar por slices sin recortear el compliance.
@@ -129,7 +129,7 @@ Estas son las preguntas P1–P5 del research que **no fueron respondidas** y que
 | **P5** | Riesgo regulatorio de entrar sin ARCA | **Manejado por DD-01** (compliance-first desde el día 1) | Cubierta |
 
 **Nota**: la mayoría de las preguntas de discovery quedaron resueltas por las decisiones DD-01 a
-DD-11 de la KB. Las que siguen abiertas están，现在 todas mapeadas a las PQ de arriba.
+DD-11 de la KB. Las que siguen abiertas están todas mapeadas a las PQ de arriba.
 
 ---
 

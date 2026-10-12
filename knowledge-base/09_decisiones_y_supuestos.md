@@ -154,7 +154,7 @@ obligatorio (RN-TEN-02).
 
 **Justificaciones**: (1) el research muestra que **ningún competidor verificado lo resuelve de
 punta a punta** — el hueco persiste más allá del MVP; (2) el nomenclador cambia por convenio y
-por璐 provincia, lo que implica un problema de **mantenimiento continuo**, no de desarrollo;
+por cada provincia, lo que implica un problema de **mantenimiento continuo**, no de desarrollo;
 (3) agrega ~2 meses al camino al primer ingreso.
 
 **Trade-offs aceptados**: el MVP atiende un subsegmento más angosto. El schema ya está
@@ -216,35 +216,29 @@ plantillas pre-aprobadas por Meta, lo que agrega fricción al onboarding.
 
 ## Supuestos inferidos
 
-### SU-01 — Equipo de 2 a 4 developers
+### SU-01 — Equipo de 1 developer (VALIDADO 2026-10-09)
 
-**Supuesto**: el equipo es chico (2–4 devs), probablemente 1 backend + 1 frontend + apoyo parcial.
+**Supuesto**: el equipo es de **1 developer full-stack**. Confirmado por el usuario el
+2026-10-09: "Solo un dev".
 
-**Origen**: no fue informado en ningún momento. Es un supuesto por defecto del usuario al
-aceptar "dale a los defaults".
+**Origen**: confirmado explícitamente en sesión. Reemplaza al supuesto anterior de 2–4 devs.
 
-**Riesgo si es falso**: si el equipo es de 1 persona, el alcance de 7 slices P0 es inalcanzable
-y el roadmap debe recortarse a 3–4 slices. Si es de 6+, el timeline se acorta pero la
-coordinación y el riesgo de inconsistencia entre capas de ARCA crecen.
-
-**Cómo validar**: preguntar antes de generar el roadmap (`CHANGES.md`). **Es la pregunta que
-más impacto tiene en el plan.**
+**Riesgo (ya resuelto)**: con 1 dev, el alcance de los 23 changes del roadmap es inalcanzable
+en el plazo. El plan se recorta a las slices que un dev full-stack pueda entregar antes del
+deadline (ver SU-02).
 
 ---
 
-### SU-02 — Sin deadline duro
+### SU-02 — Deadline 2026-10-23 (VALIDADO 2026-10-09)
 
-**Supuesto**: no hay fecha de lanzamiento commitment; el trabajo se organiza por capability
-(slices), no por calendario.
+**Supuesto**: hay un deadline de **2 semanas a partir del 2026-10-09 → 2026-10-23**.
+Confirmado por el usuario.
 
-**Origen**: no fue informado. El usuario aceptó el supuesto.
+**Origen**: confirmado explícitamente en sesión. Reemplaza al supuesto de "sin deadline".
 
-**Riesgo si es falso**: si hay un deadline comercial (ej. una feria del sector), la priorización
-por compliance-first puede chocar con "necesito facturar sí o sí". El orden de slices de
-`06_funcionalidades.md` asume que se puede priorizar por riesgo.
-
-**Cómo validar**: preguntar antes del roadmap. Si hay deadline, reordenar slices para que
-facturación (E7) llegue más temprano.
+**Riesgo (ya resuelto)**: la priorización debe ordenarse para que algo **demostrable de punta a
+punta** (vertical slice) llegue antes del deadline — con facturación como opción posterior si
+el tiempo alcanza, según DD-01 (compliance-first igual aplica, pero el alcance se recorta).
 
 ---
 

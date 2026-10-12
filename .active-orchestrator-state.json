@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "step": "kb",
+  "step": "implementation",
   "owner": "active-orchestrator",
   "discovery": {
     "created_by": "discovery-research",
@@ -222,5 +222,30 @@
       "knowledge-base/11_facturacion_arca.md",
       "knowledge-base/12_historia_clinical_y_compliance.md"
     ]
+  },
+  "roadmap": {
+    "created_by": "roadmap-generator",
+    "source": "CHANGES.md",
+    "changes": [
+      "C-01", "C-02", "C-03", "C-04", "C-05", "C-06", "C-07", "C-08",
+      "C-09", "C-10", "C-11", "C-12", "C-13", "C-14", "C-15", "C-16",
+      "C-17", "C-18", "C-19", "C-20", "C-21", "C-22", "C-23"
+    ],
+    "sprint_1dev": {
+      "deadline": "2026-10-23",
+      "team_size": 1,
+      "scope": ["C-01", "C-02", "C-03", "C-05", "C-06", "C-07"],
+      "meta": "agendar-turno-sin-solapamiento (crear turno sin solapamientos por profesional y sillón, RN-AG-02)"
+    }
+  },
+  "skills": {
+    "created_by": "skill-registry",
+    "registry": ".atl/skill-registry.md",
+    "count": 21,
+    "locations": {
+      "foundation": "C:\\Users\\L\\.config\\opencode\\skills",
+      "domain": "C:\\Users\\L\\.agents\\skills",
+      "project": "C:\\Users\\L\\Desktop\\Tpi Metodologia\\.opencode\\skills"
+    }
   }
 }

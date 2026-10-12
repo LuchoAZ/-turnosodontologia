@@ -67,4 +67,6 @@ El MVP cubre 10 capacidades imprescindibles y **excluye explícitamente obra soc
 de plazo). Se comercializa por **suscripción en pesos, sin packs de consumibles y sin tier
 gratis** — el único free ya documentado y bien crcído está cubierto por competidores.
 
-Equipo asumido: **2–4 devs, sin deadline duro, fases por capability y no por calendario.**
+Equipo validado: **1 desarrollador full-stack** (SU-01) con **deadline 2026-10-23** (SU-02) —
+ver [`09_decisiones_y_supuestos.md`](09_decisiones_y_supuestos.md). El alcance del sprint es la
+"ruta del turno" (C-01 → C-07) según [`../CHANGES.md`](../CHANGES.md).

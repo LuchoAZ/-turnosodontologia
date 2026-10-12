@@ -136,7 +136,7 @@ Cada regla tiene código único `RN-{DOMINIO}-{NN}` para trazabilidad desde la K
   *Justificación: coherente con RN-CMP-02 y necesario para defender el charting ante un reclamo.*
 
 - **RN-CLI-04** — Profundidad de bolsa > 5 mm en 2+ sitios de una pieza, o sangrado > 30%,
- 置 una `alerta_clinica` visible en la pantalla de atención. **Esto es heurística de UX, no un
+ → una `alerta_clinica` visible en la pantalla de atención. **Esto es heurística de UX, no un
   diagnóstico ni una recomendación terapéutica.**
 
 - **RN-CLI-05** — Un procedimiento solo puede pasar a `realizado` si la pieza tiene odontograma

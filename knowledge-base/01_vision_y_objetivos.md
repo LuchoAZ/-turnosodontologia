@@ -23,26 +23,26 @@ trazabilidad de datos de salud. La agenda es el medio, no el fin.
 | Hallazgo | Implicación para este producto |
 |----------|--------------------------------|
 | 20/20 competidores tienen agenda con reserva online | No es un diferencial; es un requisito de entrada |
-| 19/20 son SaaS en nube; 1 solo local-first (Mac-only) | Nube multi-tenant es la defecto, no la excepción |
+| 19/20 son SaaS en nube; 1 solo local-first (Mac-only) | Nube multi-tenant es la norma, no la excepción |
 | Top 3 por volumen: OdontoClinIA, DentalCore, Bilog | Segmento PYME dominado por OdontoClinIA (gratis) y Bilog (20 años) |
-| Claims de ARCA "100% integrado"普遍 `[A]` sin evidencia técnica | Atacar esos claims es el eje comercial más fuerte disponible |
+| Claims de ARCA "100% integrado" generalizado `[A]` sin evidencia técnica | Atacar esos claims es el eje comercial más fuerte disponible |
 | OdontoClinIA aparece en ReNaPDiS `#248` (verificado) | Prueba de que el nicho regulado está vacío |
 | Nadie modela el **sillón** como unidad de capacidad | Diferencial técnico concreto y de bajo costo de implementar |
-| Pricing monthly: USD 15–90 (Arkока) | Hay presupuesto en la categoría, pero precio en pesos local es un hueco |
+| Pricing monthly: USD 15–90 (aprox.) | Hay presupuesto en la categoría, pero precio en pesos local es un hueco |
 
 ## Objetivos por actor
 
 | Actor | Objetivo principal | Objetivos secundarios |
 |-------|-------------------|----------------------|
-| **Dueño de la clínica** | Saber si el negocio es rentable: cuánto factura, cuánto le corresponde a cada profesional, cuánto se pierde por turnos no Dbilled | Facturar sin depender de un contador externo; dormir tranquilo con el compliance de datos |
+| **Dueño de la clínica** | Saber si el negocio es rentable: cuánto factura, cuánto le corresponde a cada profesional, cuánto se pierde por turnos no facturados | Facturar sin depender de un contador externo; dormir tranquilo con el compliance de datos |
 | **Dirección clínica** | tener la agenda del día bajo control y detectar sobrecupos, huecos y cancelaciones temprano | Ver carga por sillón (no solo por profesional) |
-| **Odontólogo** | Registrar el trabajo en menos de 60 segundos durante la atención, sin perder el foco del paciente | Ver el odontograma de un vistazo; que la助手 complete lo administrativo |
+| **Odontólogo** | Registrar el trabajo en menos de 60 segundos durante la atención, sin perder el foco del paciente | Ver el odontograma de un vistazo; que la asistente complete lo administrativo |
 | **Higienista / Asistente** | Cargar razonamiento y procedimientos con su propio login y sin pisar al odontólogo | Poder preparar el turno antes de que llegue el paciente |
 | **Recepcionista** | Agendar, reprogramar y confirmar sin que el paciente la llame 4 veces al mismo teléfono | Que la lista de espera rellene los huecos sola |
-| **Administración / Facturación** | Emitir comprobantes y cobrar sin errores de carga fiscal ni de有时间错配 | Conciliar caja del día contra lo facturado |
-| **Paciente** | Sacar turno a las 3am sin llamar, y no tener que explicar su historia clínica cada vez | Recibir recordatorios y(copy) de su documentación |
+| **Administración / Facturación** | Emitir comprobantes y cobrar sin errores de carga fiscal ni de imputación errónea | Conciliar caja del día contra lo facturado |
+| **Paciente** | Sacar turno a las 3am sin llamar, y no tener que explicar su historia clínica cada vez | Recibir recordatorios y copia de su documentación |
 | **Laboratorio / profesional externo** | Recibir el pedido de trabajo con los datos exactos, y sin exponerse a más datos de salud de los que necesita | — |
-| **Operador del producto (nosotros)** | Que la actualización normativa la paguemos una vez y no N veces | Que el onboarding de un tenant nuevo sea automatizado y no una endocrinopathy de soporte manual |
+| **Operador del producto (nosotros)** | Que la actualización normativa la paguemos una vez y no N veces | Que el onboarding de un tenant nuevo sea automatizado y no una tarea de soporte manual |
 
 ## Alcance v0.1 (MVP)
 
@@ -69,7 +69,7 @@ Explícitamente **no** en v0.1, con justificación:
   existiendo en v0.2. Decisión DD-08.
 - **Radiología / imágenes DICOM** — el relevamiento lo marca como una de las 4 brechas
   grandes, pero requiere PACS y es un proyecto en sí mismo. v0.2/v0.3.
-- **Laboratorio y UNITY (integración con línea de掃描)** — solo el pedido de trabajo simple. v0.3.
+- **Laboratorio y UNITY (integración con línea de escaneo)** — solo el pedido de trabajo simple. v0.3.
 - **Hardware de consultorio** — integraciones con sillón, lámpara, etc. Fuera por decisión.
 - **Tier gratis / packs de consumibles** — decisión comercial DD-09.
 - **App móvil nativa** — web responsive primero.
@@ -88,8 +88,7 @@ Explícitamente **no** en v0.1, con justificación:
 | Time-to-first-turno agendado | < 15 min desde alta | idem |
 | Consultorías PyME ya generando turnos | ≥ 3 de referencia al cierre | valida el segmento elegido |
 | Holes de agenda rellenados desde lista de espera | ≥ 15% | valida el RN-AG de lista de espera |
-| %
- pacientes que reservan sin llamar | ≥ 60% | valida el canal self-service |
+| % pacientes que reservan sin llamar | ≥ 60% | valida el canal self-service |
 
 ### Técnicas / de riesgo
 
@@ -101,11 +100,11 @@ Explícitamente **no** en v0.1, con justificación:
 | Auditorías de acceso a datos sensibles registradas | 100% | requisito legal + defensa en litigio |
 | Cross-tenant leak (hallazgos, objetivo) | **0** | la métrica que, si falla, mata el negocio |
 
-### Anti-métricas (se actively measurean para evitar)
+### Anti-métricas (se miden activamente para evitar)
 
 - **Horas de soporte por clínica al mes.** Si supera 2 h/clínica, el producto está mal
-  designed y el modelo de suscripción en pesos no cierra.
-- **Claims de compliance publicados sin verificación.** Cero. El positioned se gana por
+  diseñado y el modelo de suscripción en pesos no cierra.
+- **Claims de compliance publicados sin verificación.** Cero. El posicionamiento se gana por
   lo que se puede probar, no por lo que se promete (ver `discovery/discovery.md`).
 
 ## Principios de producto
@@ -113,7 +112,7 @@ Explícitamente **no** en v0.1, con justificación:
 1. **Compliance antes que features.** Una función que no se puede auditar no entra.
 2. **Un verbo por rol.** Si un actor necesita tres verbos, probablemente son dos roles.
 3. **El sillón es la unidad de capacidad.** Si la agenda no puede bloquear el sillón, no
-   cumple su función en una clínica con más de un equipped.
+   cumple su función en una clínica con más de un sillón.
 4. **Sin dato de salud sin motivo.** Cada lectura de historia clínica queda auditada.
 5. **Nada se borra físicamente en historia clínica.** Solo se anota.
 6. **Si una norma cambia, la actualizamos nosotros, no el cliente.**

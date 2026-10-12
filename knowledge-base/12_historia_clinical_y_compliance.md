@@ -21,7 +21,7 @@
 | **Ley provincial de ejercicio profesional** | Habilitación para el registro de prácticas | Parte del onboarding del profesional |
 
 > **Verificar**: los plazos exactos de entrega de copia y de respuesta a solicitudes de acceso,
-> y la交互 del contenido obligatorio, con la fuentes oficiales y un abogado. PQ-02, PQ-03.
+> y el alcance del contenido obligatorio, con la fuentes oficiales y un abogado. PQ-02, PQ-03.
 
 ---
 
@@ -138,7 +138,7 @@ recibida → en_verificacion → en_proceso → atendida
 |--------------------------------|------------------------------|
 | Acceso a sus datos | `access_request` + copia autenticada |
 | Rectificación | `access_request` tipo `rectificacion`; los datos clínicos se corrigen con `supersedes` (no se borran) |
-| Supresión | `access_request` tipo `supresion`; se evalúa si aplica (datos de salud tienen，哪个義務 de conservación) — **verificar con Legal** |
+| Supresión | `access_request` tipo `supresion`; se evalúa si aplica (datos de salud tienen plazos de conservación) — **verificar con Legal** |
 | Portabilidad | Exportación de sus datos en formato libre (US-093 incluye, o standalone) |
 | Baja de comunicaciones | `RN-COM-05`: baja de marketing, sin perder esenciales |
 

@@ -369,4 +369,4 @@ turno en mostrador sin funciones clínicas.
 | **Dentaly, OdontoApp, DentalTec** | SPA sin contenido renderizable; solo verificables vía metadatos o páginas legales. |
 | **Odontozen, OdontoWare-EC, OdontoCloudPRO** | Precios publicados de México, Ecuador o LatAm genérica; sin evidencia de operación argentina. |
 | **Nexden (CL), Reservo** | 404 o contenido JS-rendered; no verificables. |
-| **Dentrisoft, GouJana, Qlini, Doctocliq, OdontoHCE (CO)** | Candidatos就是说 redirected殖民地 Interesting no verificados; ninguno fue abierto con fetch. |
+| **Dentrisoft, GouJana, Qlini, Doctocliq, OdontoHCE (CO)** | Candidatos con claim de odontología pero sin verificación: ninguno se abrió con fetch. |

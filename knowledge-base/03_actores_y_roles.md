@@ -5,13 +5,13 @@
 | Actor | Descripción | Cómo interactúa |
 |-------|-------------|-----------------|
 | **SuperAdmin (nuestro)** | Operador del SaaS. Da de alta tenants, monitorea integraciones, NO ve datos clínicos de pacientes. | Consola interna `/admin`. Acceso **auditado y justificado**. Solo.metadata y soporte; jamás ficha ni odontograma. |
-| **Owner / Administrador** | Dueño de la clínica. Decide todo: config, precios, roles, facturación. | UI interna. Único que puede dar de baja usuarios, editarliquidaciones y ver reportes financieros. |
+| **Owner / Administrador** | Dueño de la clínica. Decide todo: config, precios, roles, facturación. | UI interna. Único que puede dar de baja usuarios, editar liquidaciones y ver reportes financieros. |
 | **Dirección clínica** | Responsable del trabajo clínico. Administra agenda de los profesionales, sin acceso a lo financiero. | UI interna, scope `clinical_admin`. |
 | **Odontólogo** | Profesional tratante. Escribe historia clínica y odontograma. | UI interna + modo "en consulta" optimizado para tablet/teléfono. |
 | **Higienista / Asistente** | Ejecuta procedimientos delegables (limpieza, control de placa). | Mismo modo consulta, **su propio login**, sin poder firmar odontograma final. |
 | **Recepcionista** | Agenda, reprograma, confirma, cobra en mostrador. | UI interna, scope `front_desk`. Ve agenda y datos de contacto; **no** ve la historia clínica. |
 | **Administración / Facturación** | Emite comprobantes, gestiona caja y conciliaciones. | UI interna, scope `billing`. Ve lo económico; **no** edita historia clínica. |
-| **Paciente** | Usuario final. Agenda turno, ve sus propios datos, pide copia de su documentación. | Portal web + WhatsApp. Autenticado por **OTP a su celular/DNI**, nunca por email+s密码 reutilizable. |
+| **Paciente** | Usuario final. Agenda turno, ve sus propios datos, pide copia de su documentación. | Portal web + WhatsApp. Autenticado por **OTP a su celular/DNI**, nunca por email+password reutilizable. |
 | **Profesional externo (laboratorio)** | Recibe el pedido de trabajo. | Portal externo **de alcance mínimo**: solo los datos del trabajo, no la historia clínica completa. |
 | **Contador externo** | Asesor fiscal del tenant. Necesita ver comprobantes emitidos. | Acceso de solo lectura **a lo que el Owner le comparta explícitamente**. Ve PDFs/XML, no ficha clínica. |
 
