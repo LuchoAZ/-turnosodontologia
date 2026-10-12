@@ -1,7 +1,7 @@
 # Facturación ARCA
 
 > **Extra de dominio** — la parte de mayor riesgo técnico y regulatorio del proyecto.
-> Módulo correspondiente: `apps/api/src/modules/arca` + `apps/api/src/workers/arca-*.worker.ts`.
+> Módulo correspondiente: `backend/app/domain/arca` + `backend/app/workers/arca_*.py` (tareas Celery).
 > Épica: E7 (`06_funcionalidades.md` US-060 a US-064). Flujo: 4 (`07_flujos_principales.md`).
 
 > ⚠️ **Advertencia de veracidad**: este documento describe el diseño técnico esperado. **Los
@@ -242,7 +242,7 @@ Esto evita:
 ## Referencias (verificar vigencia)
 
 - Documentación oficial de ARCA para servicios de facturación electrónica y WSAA.
-- Los WSDL/XSD oficiales se versionan en `packages/contracts/`.
+- Los WSDL/XSD oficiales se versionan en `backend/contracts/`.
 - **Todos los códigos de error y sus significados deben extraerse del WSDL/XSD oficial**, no de
   memoria. Este documento no los fija a propósito: prefiero una tabla a construir en el código
   desde el contrato oficial (una fuente única de verdad, no comentarios desactualizados).

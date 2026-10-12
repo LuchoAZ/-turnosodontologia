@@ -4,20 +4,20 @@
 
 ## 1. Contrato compartido y cálculo de rango (TDD puro)
 
-- [ ] 1.1 Definir en `packages/shared` el `CreateAppointmentSchema` (Zod: UUIDs de `professional_id`/`chair_id`, `patient_id` nullable, `inicio`/`fin` RFC 3339 coaccionados a `Date`, `fin > inicio`, `tipo_practica` opcional; `estado` por defecto `pendiente`, `origen` fijo `recepcion`) y la función pura `resolveTurnoRange` (RN-AG-03: duración por `tipo_practica`, buffers previo/posterior heredados de `availability_rule` — incluyéndolos en el rango ocupado, default `duracion_default_min` del profesional con buffers 0). Escribir primero los tests unitarios que fallan (payload válido, campos inválidos → issues de Zod, duración con buffers, sin tipo de práctica, `fin <= inicio` rechazado) y luego implementar hasta que `npm run test --workspace packages/shared` quede en verde. Verificación: la suite unitaria pasa y cubre schema y rango.
+- [ ] 1.1 Definir en `backend/app/schemas` el modelo Pydantic v2 `CreateAppointment` (UUIDs de `professional_id`/`chair_id`, `patient_id` nullable, `inicio`/`fin` RFC 3339 coaccionados a `datetime`, `fin > inicio`, `tipo_practica` opcional; `estado` por defecto `pendiente`, `origen` fijo `recepcion`) y la función pura `resolveTurnoRange` (RN-AG-03: duración por `tipo_practica`, buffers previo/posterior heredados de `availability_rule` — incluyéndolos en el rango ocupado, default `duracion_default_min` del profesional con buffers 0). Escribir primero los tests unitarios que fallan (payload válido, campos inválidos → errores de Pydantic, duración con buffers, sin tipo de práctica, `fin <= inicio` rechazado) y luego implementar hasta que `pytest` quede en verde. Verificación: la suite unitaria pasa y cubre schema y rango.
 
 ## 2. Alta del turno — 201 (backend)
 
 - [ ] 2.1 RED: escribir el test de integración (Testcontainers Postgres real, siembra de **2 tenants**) de `POST /api/v1/appointments` autenticado con payload válido → `201` con el turno creado (`estado = pendiente`, `origen = recepcion`, `inicio`/`fin` en UTC) y que la respuesta no filtra `tenant_id`. Verificar que falla (aún no existe el módulo).
-- [ ] 2.2 GREEN: crear el slice vertical `apps/api/src/appointments/` (controller + service, inyección por constructor): resolver `tenant_id` exclusivamente de la sesión/token (RN-TEN-03, guard provisto por C-03), abrir la transacción con `SET LOCAL app.current_tenant` y persistir con `prisma.$transaction`. Verificar que 2.1 pasa y que un `tenant_id` enviado en el body es ignorado.
+- [ ] 2.2 GREEN: crear el slice vertical `backend/app/domain/agenda/appointments/` (router + service, dependencias inyectadas): resolver `tenant_id` exclusivamente de la sesión/token (RN-TEN-03, dependencia provista por C-03), abrir la transacción con `SET LOCAL app.current_tenant` y persistir con SQLAlchemy (transacción de sesión). Verificar que 2.1 pasa y que un `tenant_id` enviado en el body es ignorado.
 
 ## 3. Prevención de solapamiento — 409 (profesional y sillón)
 
-- [ ] 3.1 RED→GREEN: escribir los tests de integración de solape por `professional_id` y por `chair_id` → `409` con `{ recurso, rangoEnConflicto }` (RN-AG-02), y que un turno `cancelado`/`no_asistio` **no** bloquea → `201`; implementar el overlap pre-check en aplicación (rango `[inicio, fin)`, estados activos, scoped al tenant) dentro de la transacción; corrida `npm run test:integration` en verde. Verificación: los tests de 409 pasan y nombran el recurso y el rango.
+- [ ] 3.1 RED→GREEN: escribir los tests de integración de solape por `professional_id` y por `chair_id` → `409` con `{ recurso, rangoEnConflicto }` (RN-AG-02), y que un turno `cancelado`/`no_asistio` **no** bloquea → `201`; implementar el overlap pre-check en aplicación (rango `[inicio, fin)`, estados activos, scoped al tenant) dentro de la transacción; corrida `pytest` en verde. Verificación: los tests de 409 pasan y nombran el recurso y el rango.
 
 ## 4. Garantía dura de la BD — doble booking bajo concurrencia
 
-- [ ] 4.1 RED→GREEN: escribir el test de concurrencia (dos `create` simultáneos sobre el mismo `professional`/`chair`) → exactamente uno `201` y el otro `409` porque el `EXCLUDE USING gist` lo rechaza; implementar en el `ExceptionFilter` global el mapeo de la *exclusion violation* (`SQLSTATE 23P01`) al mismo contrato `409` de 3.1; verificar que la suite pasa y que ambos `409` (aplicación y BD) comparten el mismo shape. Verificación: el test de concurrencia pasa con Postgres real (sin mocks).
+- [ ] 4.1 RED→GREEN: escribir el test de concurrencia (dos `create` simultáneos sobre el mismo `professional`/`chair`) → exactamente uno `201` y el otro `409` porque el `EXCLUDE USING gist` lo rechaza; implementar en el exception handler global el mapeo de la *exclusion violation* (`SQLSTATE 23P01`) al mismo contrato `409` de 3.1; verificar que la suite pasa y que ambos `409` (aplicación y BD) comparten el mismo shape. Verificación: el test de concurrencia pasa con Postgres real (sin mocks).
 
 ## 5. RN-AG-10 — paciente con turno solapado del mismo profesional
 
@@ -29,7 +29,7 @@
 
 ## 7. UI — formulario mínimo de agendamiento (vertical slice)
 
-- [ ] 7.1 RED→GREEN: implementar en `apps/web` la ruta `/turnos/nuevo` (Next.js 15 App Router + shadcn/ui): carga de `patient`/`professional`/`chair` en paralelo (sin waterfalls), validación pre-submit con el `CreateAppointmentSchema` compartido, conversión de hora local a UTC (RN-AG-09), y mapa de errores del endpoint (`409` → conflicto visible con recurso, `422` → errores por campo, `404` → "recurso no encontrado o sin acceso"); escribir el e2e Playwright (creación ok, solape visible, error 404 legible) y verificar que el formulario lo satisface. Verificación: `npx playwright test` en verde sobre el flujo del form.
+- [ ] 7.1 RED→GREEN: implementar en `frontend/src/features/agenda` la ruta `/turnos/nuevo` (React + Vite con React Router + shadcn/ui): carga de `patient`/`professional`/`chair` en paralelo (sin waterfalls), validación pre-submit con Zod en el cliente a partir de los tipos del OpenAPI, conversión de hora local a UTC (RN-AG-09), y mapa de errores del endpoint (`409` → conflicto visible con recurso, `422` → errores por campo, `404` → "recurso no encontrado o sin acceso"); escribir el e2e Playwright (creación ok, solape visible, error 404 legible) y verificar que el formulario lo satisface. Verificación: `npx playwright test` en verde sobre el flujo del form.
 
 ## 8. Verificación de integración
 

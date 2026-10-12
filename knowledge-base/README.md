@@ -53,8 +53,9 @@ El proyecto tiene **dos** fuentes de riesgo dominante, y ninguna de las dos es "
 ## Resumen Ejecutivo
 
 Sistema SaaS multi-tenant de gestión odontológica para **clínicas PyME de 3 a 10 sillones**
-multiprofesionales en Argentina, con stack TypeScript end-to-end (Next.js + NestJS +
-PostgreSQL + Redis) sobre nube.
+multiprofesionales en Argentina, con stack Python 3.12 + FastAPI + SQLAlchemy/Alembic +
+PostgreSQL 16 (RLS) + Redis 7 (Celery) en el backend y React 18/TypeScript/Vite en el
+frontend, sobre nube.
 
 El **posicionamiento es compliance-first**, no features-first. El relevamiento de 20
 competidores dio un resultado que define la estrategia: **la agenda con reservas online ya no

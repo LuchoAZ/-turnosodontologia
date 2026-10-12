@@ -49,7 +49,7 @@ API + formulario mínimo y evidencia de tests de punta a punta.
 
 ```
 C-01 foundation-setup              monorepo + tests con Postgres/Redis reales + CI
-  → C-02 core-models-tenancy       modelos Prisma + RLS + EXCLUDE (anti-solapamiento)
+  → C-02 core-models-tenancy       modelos SQLAlchemy + RLS + EXCLUDE (anti-solapamiento)
   → C-03 auth-sessions             sesión httpOnly + tenant del token
   → C-05 clinic-setup              profesionales, sillones y reglas de duración
   → C-06 patients                  pacientes
@@ -58,23 +58,30 @@ C-01 foundation-setup              monorepo + tests con Postgres/Redis reales + 
 
 ## 3. Stack tecnológico
 
-| Capa | Tecnología |
-|---|---|
-| Lenguaje | TypeScript 5.6+ (strict, sin `any` en dominio) |
-| Runtime | Node.js 22 LTS |
-| Frontend | Next.js 15 (App Router) + Tailwind CSS 4 + shadcn/ui |
-| Formularios | React Hook Form + Zod — **el mismo schema valida frontend y backend** |
-| Backend | NestJS 11 |
-| ORM | Prisma 6 |
-| Base de datos | PostgreSQL 16 (RLS nativo por tenant) |
-| Colas / cache | Redis 7 + BullMQ 5 |
-| Facturación | fast-xml-parser + esquemas XSD ARCA; node-forge/x509.js (X.509 por tenant) |
-| Auth | Sesión httpOnly + refresh rotativo (sin JWT en localStorage) |
-| Observabilidad | OpenTelemetry + Sentry (modo degradado si no hay endpoints) |
-| Tests | Vitest + Testcontainers + Playwright (Postgres real, sin mocks de DB) |
+| Capa | Tecnología | Versión mínima |
+|------|-----------|----------------|
+| Lenguaje backend | Python | 3.12 (type hints estrictos con mypy, sin `Any` en dominio) |
+| Framework backend | FastAPI | latest (async nativo, OpenAPI automático) |
+| ORM | SQLAlchemy 2.0 + Alembic | 2.0 (migraciones versionadas) |
+| Validación | Pydantic v2 + pydantic-settings | 2.0 — **el contrato front↔back es el OpenAPI de FastAPI (Pydantic v2)** |
+| Base de datos | PostgreSQL | 16 (RLS nativo por tenant) |
+| Colas / cache | Redis + Celery | 7 / 5 |
+| Object storage | S3-compatible | — |
+| XML | `lxml` + `xmlschema` (esquemas XSD ARCA) | latest |
+| Crypto | `cryptography` | latest (X.509 por tenant) |
+| PDF | ReportLab / WeasyPrint | latest |
+| Frontend | React + TypeScript + Vite | 18 / 5 / 6 |
+| UI | Tailwind CSS + shadcn/ui | 4 / latest |
+| Formularios | React Hook Form + Zod | latest (validación solo en el cliente) |
+| Auth | JWT (access + refresh rotativo) en cookie httpOnly | — (DD-10 revisada, no JWT en localStorage) |
+| Cliente HTTP (back) | httpx | latest |
+| Observabilidad | OpenTelemetry (Python SDK) + Sentry | latest (modo degradado) |
+| Tests | pytest + Testcontainers + Playwright (back/e2e); Vitest (front) | latest (Postgres real, no mocks de DB) |
+| Contenedores | Docker + docker-compose | — |
 
-**Arquitectura**: monorepo `npm workspaces` + Turborepo, **vertical slices** (cada change entrega API +
-UI de su capacidad), nunca construcción por capas.
+**Arquitectura**: repositorio con `backend/` (Python) + `frontend/` (React/Vite) y `docker-compose`,
+contrato **OpenAPI** entre ambos (el backend FastAPI genera el schema; el frontend deriva los tipos
+TypeScript). **Vertical slices** (cada change entrega API + UI de su capacidad), nunca construcción por capas.
 
 ## 4. Estructura del repositorio
 
@@ -89,10 +96,10 @@ UI de su capacidad), nunca construcción por capas.
 │   │   ├── c-01-foundation-setup/
 │   │   └── agendar-turno-sin-solapamiento/
 │   └── specs/                   # Specs de capacidades (tras archive)
-├── apps/                        # (objetivo C-01) api · web · worker
-├── packages/                    # (objetivo C-01) shared · contracts · ui-kit
-├── docker-compose.yml           # (objetivo C-01) Postgres 16 + Redis 7 local
-└── .env.example                 # (objetivo C-01) variables validadas con Zod
+├── backend/                     # (objetivo C-01) FastAPI: app/, alembic/, tests/
+├── frontend/                    # (objetivo C-01) React + Vite: src/{routes,features,shared,api}
+├── docker-compose.yml           # (objetivo C-01) Postgres 16 + Redis 7 + backend + worker + frontend
+└── .env.example                 # (objetivo C-01) variables validadas con pydantic-settings
 ```
 
 ## 5. Modo de uso
@@ -114,31 +121,37 @@ CHANGES.md                          # roadmap y dependencias
 
 ### 5.2 Entorno de desarrollo (previsto — se activa con la implementación de C-01)
 
-Requisitos: **Node.js 22 LTS**, **Docker Desktop** (para levantar PostgreSQL 16 y Redis 7 reales).
+Requisitos: **Python 3.12**, **Node.js 20+**, **Docker Desktop** (para levantar PostgreSQL 16 y Redis 7 reales).
 
 ```bash
-# 1) Instalar dependencias del monorepo
+# 1) Backend: instalar dependencias (pyproject.toml + uv o venv)
+cd backend
+pip install -e ".[dev]"        # o: uv sync
+
+# 2) Frontend: instalar dependencias
+cd ../frontend
 npm install
 
-# 2) Levantar la infraestructura local (Postgres 16 + Redis 7)
+# 3) Levantar la infraestructura local (Postgres 16 + Redis 7)
 docker compose up -d
 
-# 3) Configurar entorno (validado con Zod al arrancar; falla ante variables inválidas)
+# 4) Configurar entorno (pydantic-settings valida al boot; falla ante variables faltantes/inválidas)
 cp .env.example .env
 
-# 4) Correr api (NestJS 11) + web (Next.js 15) en modo desarrollo
-npm run dev
+# 5) Correr backend (FastAPI) + frontend (Vite) en modo desarrollo
+cd ../backend; uvicorn app.main:app --reload   # puerto 8000
+cd ../frontend; npm run dev                    # puerto 5173
 
-# 5) Verificar salud del servicio
-GET http://localhost:3000/health    # liveness
-GET http://localhost:3000/ready     # readiness (Postgres + Redis)
+# 6) Verificar salud del servicio
+GET http://localhost:8000/health    # liveness
+GET http://localhost:8000/ready     # readiness (Postgres + Redis)
 ```
 
 ### 5.3 Tests
 
 ```bash
-npm test              # unit (Vitest)
-npm run test:integration   # integración con Testcontainers: Postgres 16 + Redis 7 reales
+pytest                     # backend: unit + integration (Testcontainers: Postgres 16 + Redis 7 reales)
+npm test                   # frontend: unit (Vitest)
 npm run test:e2e           # e2e (Playwright) del formulario web
 ```
 
@@ -155,9 +168,9 @@ Extraídas de `AGENTS.md` — las lee todo agente antes de tocar código:
 - **Aislamiento multi-tenant**: `tenant_id` siempre del token/sesión, nunca del body; RLS activa en toda
   tabla de negocio; sin test cross-tenant no se mergea.
 - **Historia clínica**: append-only con `supersedes_id` (Ley 26.529); nunca `UPDATE`/`DELETE`.
-- **ARCA**: nunca síncrono dentro de un request → Outbox + BullMQ; el tipo de comprobante se deriva del
+- **ARCA**: nunca síncrono dentro de un request → Outbox + Celery (Redis); el tipo de comprobante se deriva del
   estado fiscal del cliente; X.509 cifrado por tenant, nunca en claro ni en logs.
-- **Sin `any`** en el dominio; el mismo schema Zod valida frontend y backend.
+- **Sin `Any`** en el dominio; el contrato front↔back es el OpenAPI de FastAPI (Pydantic v2).
 - **Flujo**: leer KB relevante → identificar el change en `CHANGES.md` → `/opsx:propose` →
   implementar (TDD + gates) → `/opsx:archive`.
 

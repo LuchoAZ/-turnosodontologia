@@ -14,7 +14,7 @@ Este es el flujo más sensible del onboarding: si termina mal, la clínica no pu
 el tiempo-to-first-emitido se destroys.
 
 ```
-Owner            Next.js        API           PostgreSQL     ARCA(WSAA)
+Owner            React/Vite     API           PostgreSQL     ARCA(WSAA)
   |                |             |                |              |
   |--registro---->|             |                |              |
   |                |--POST /onboarding/tenant------->|           |
@@ -71,7 +71,7 @@ Owner            Next.js        API           PostgreSQL     ARCA(WSAA)
 **Actor**: Recepcionista
 
 ```
-Recepcionista     Next.js         API              PostgreSQL
+Recepcionista     React/Vite      API              PostgreSQL
    |                |              |                   |
    |--GET /availability?prof&from&to&chair----------->|
    |                |              |--leer availability_rule|

@@ -204,7 +204,7 @@
       "system_type": "saas_multi_tenant",
       "domain": "salud / odontologia (gestion de consultorio dental)",
       "scale": "multi_tenant",
-      "stack": "TypeScript end-to-end: Next.js 15 + NestJS 11 + PostgreSQL 16 + Redis 7 (BullMQ) + Prisma, deploy en nube (AWS o GCP)",
+      "stack": "Python 3.12 + FastAPI + SQLAlchemy 2.0 + PostgreSQL 16 + Redis 7 (Celery) + React 18/TS/Vite, deploy en nube (AWS o GCP)",
       "needs_infra": true
     },
     "files": [

@@ -1,7 +1,7 @@
 # Historia Clínica y Compliance
 
 > **Extra de dominio** — la capa normativa que define el posicionamiento (DD-01) y la que más
-> riesgo legal tiene. Módulo: `apps/api/src/modules/clinical` + `compliance`.
+> riesgo legal tiene. Módulo: `backend/app/domain/clinical` + `compliance`.
 > Épica: E5 (`06_funcionalidades.md` US-040 a US-043). Flujo: 5 (`07_flujos_principales.md`).
 > Reglas: RN-CMP-01 a RN-CMP-08 (`05_reglas_de_negocio.md`).
 

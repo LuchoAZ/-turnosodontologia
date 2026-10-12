@@ -5,7 +5,7 @@
 `_shared/skill-resolver.md` describes the full resolution protocol (not present in this workspace).
 
 **Project**: Gestión Odontológica PyME (`odontologia-saas`, repo `-turnosodontologia`)
-**TypeScript end-to-end**: Next.js 15 · NestJS 11 · PostgreSQL 16 · Redis 7 (BullMQ) · Prisma · Tailwind + shadcn/ui · Vitest/Jest · Playwright · OpenTelemetry/Sentry.
+**Stack actual (2026-10-11)**: Python 3.12 (FastAPI) + React/Vite · PostgreSQL 16 (RLS) · Redis 7 (Celery) · Tailwind + shadcn/ui · pytest/Vitest · Playwright · OpenTelemetry/Sentry.
 
 ---
 
@@ -26,13 +26,13 @@
 
 | Trigger | Skill | Path |
 |---------|-------|------|
-| Writing, reviewing, or refactoring NestJS code (modules, DI, security, performance) | nestjs-best-practices | C:\Users\L\.agents\skills\nestjs-best-practices\SKILL.md |
+| Writing, reviewing, or refactoring NestJS code (legacy — stack anterior; el backend actual es FastAPI/Python) | nestjs-best-practices | C:\Users\L\.agents\skills\nestjs-best-practices\SKILL.md |
 | Automate browser interactions, test web pages, work with Playwright tests | playwright-cli | C:\Users\L\.agents\skills\playwright-cli\SKILL.md |
-| Writing DB queries, CRUD, filtering, or configuring Prisma Client ("prisma query", "findMany", "create", "update", "$transaction") | prisma-client-api | C:\Users\L\.agents\skills\prisma-client-api\SKILL.md |
+| Writing DB queries, CRUD, filtering, or configuring Prisma Client (legacy — stack anterior; el ORM actual es SQLAlchemy 2.0 + Alembic) | prisma-client-api | C:\Users\L\.agents\skills\prisma-client-api\SKILL.md |
 | Working with shadcn/ui, component registries, presets, `components.json`; "shadcn init"; design system from DESIGN.md | shadcn | C:\Users\L\.agents\skills\shadcn\SKILL.md |
 | BEFORE writing/changing anything in a Postgres DB — schema, migration, RLS, index, query; diagnosing slow queries/locks/RLS leaks | supabase-postgres-best-practices | C:\Users\L\.agents\skills\supabase-postgres-best-practices\SKILL.md |
 | Build features or fix bugs test-first, "red-green-refactor", or want integration tests | tdd | C:\Users\L\.agents\skills\tdd\SKILL.md |
-| Writing/reviewing/refactoring React/Next.js code; performance, data fetching, bundle optimization | vercel-react-best-practices | C:\Users\L\.agents\skills\vercel-react-best-practices\SKILL.md |
+| Writing/reviewing/refactoring React code (vigente; aplica a React 18 + Vite); performance, data fetching, bundle optimization | vercel-react-best-practices | C:\Users\L\.agents\skills\vercel-react-best-practices\SKILL.md |
 
 ### Project Skills (OPSX/OpenSpec — deduplicated)
 
@@ -257,3 +257,5 @@ The canonical convention index files now exist: `AGENTS.md` / `CLAUDE.md` at the
 | Agent instructions | `AGENTS.md` / `CLAUDE.md` | Canonical instruction files at project root (stack, KB, skills-per-agent, roadmap, hard rules). |
 
 Now that `AGENTS.md`/`CLAUDE.md` exist, they are the canonical convention index; regenerate this registry when skills change.
+
+> **Nota de stack (2026-10-11)**: Stack actualizado a Python/FastAPI + React/Vite el 2026-10-11; regenerar este registry con la skill `skill-registry` para agregar skills de Python cuando se instalen.

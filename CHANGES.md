@@ -104,15 +104,15 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
 
 ### [C-01] `foundation-setup` — SPRINT
 - **Estado**: `[ ]` pendiente
-- **Scope**: Scaffolding del monorepo TypeScript + infraestructura base
-  - Estructura: `apps/api` (NestJS), `apps/web` (Next.js 15 App Router), `apps/worker`, `packages/shared`, `packages/contracts`, `packages/ui-kit`
+- **Scope**: Scaffolding del repositorio backend/frontend (FastAPI + React/Vite) + infraestructura base
+  - Estructura: `backend/` (FastAPI) + `frontend/` (React + TS + Vite)
   - `docker-compose.yml`: PostgreSQL 16 + Redis 7 para desarrollo
-  - Prisma inicializado en `apps/api/prisma` con `schema.prisma` vacío + primera migración placeholder
+  - SQLAlchemy 2.0 + Alembic inicializado en `backend/` con schema vacío + migración baseline
   - Validación de config al boot: la app **falla al arrancar** si falta una env requerida
   - `GET /health` y `GET /ready` sin datos de negocio
   - OpenTelemetry + Sentry skeleton (traza con `tenant_id` en el contexto)
   - `.env.example` documentando las 24 variables de `08_arquitectura_propuesta.md`
-  - CI (GitHub Actions): lint → typecheck → unit → build, jobs paralelos api/web
+  - CI (GitHub Actions): lint → typecheck → unit → build, jobs paralelos backend/frontend
 - **Dependencias**: ninguna
 - **Governance**: MEDIO
 - **Leer antes**:
@@ -129,7 +129,7 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
 - **Scope**: Modelos base, aislamiento multi-tenant y catálogos seed
   - Modelos: `tenant`, `user`, `membership`, `role` (enum), `specialty` (global), `price_concept` (global), `currency`
   - `tenant_id NOT NULL` en toda tabla de negocio + **Row Level Security** activada
-  - Middleware `SET LOCAL app.current_tenant` por transacción (Prisma)
+  - Middleware `SET LOCAL app.current_tenant` por transacción (SQLAlchemy)
   - `TenantGuard` que resuelve `tenant_id` **del token, nunca del body** (RN-TEN-03)
   - Migración `001_core_tenancy` + script de aplicación de RLS
   - Seed: 9 roles de `03_actores_y_roles.md`, `ARS`/`USD`, ~15 specialties, ~80 `price_concept` de referencia
@@ -239,7 +239,7 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
 ### [C-18] `comms-infra`
 - **Estado**: `[ ]` pendiente
 - **Scope**: Infraestructura de comunicación multicanal (outbox)
-  - **Outbox publisher** + `apps/worker` BullMQ operativo
+  - **Outbox publisher** + worker Celery (Redis) operativo
   - Modelos: `comms_thread`, `comms_message`, `comms_template`, `webhook_event`
   - Estrategia WhatsApp (Cloud API oficial) + estrategia email (provider a definir, PQ-08)
   - `POST /webhooks/whatsapp` con **verificación `X-Hub-Signature-256` obligatoria** (RN-COM-04)
@@ -444,7 +444,7 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
   - **Traductor de errores ARCA → `invoice_rejection.sugerencia`** (`corregir`/`anular`/`esperar`/`soporte`)
   - Rechazo determinístico **no se reintenta** (RN-ARCA-06); transitorio reintenta con misma key
   - Token expirado → re-obtener + reintentar una vez (misma key)
-  - PDF del comprobante (CAE, barcode, QR) vía Playwright
+  - PDF del comprobante (CAE, barcode, QR) vía ReportLab/WeasyPrint
   - Guarda `request_hash` + `respuesta_xml` completo (RN-ARCA-08)
   - Tests contra **homologación** de ARCA (nunca producción): idempotencia, rechazo, transitorio, cert vencido
 - **Dependencias**: C-15, C-16

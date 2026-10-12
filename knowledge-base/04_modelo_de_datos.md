@@ -507,7 +507,7 @@ Implementación en 4 capas, de defense-in-depth:
 |------|-----------|---------------|
 | 1 | `tenant_id` NOT NULL en **todas** las tablas de negocio | El error de aplicación más común |
 | 2 | **Row Level Security** de PostgreSQL + `SET LOCAL app.current_tenant` en cada transacción | Un `WHERE` olvidado en un query |
-| 3 | `TenantGuard` de NestJS resuelve `tenant_id` del token; **nunca del body** | Manipulación del request |
+| 3 | dependencia `require_tenant` de FastAPI resuelve `tenant_id` del token; **nunca del body** | Manipulación del request |
 | 4 | Tests automatizados que intentan leer cross-tenant y **deben fallar** | Regresión silenciosa |
 
 > **RN-TEN-02**: los tests de aislamiento son **obligatorios** para cualquier endpoint nuevo

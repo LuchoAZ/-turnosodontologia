@@ -70,23 +70,29 @@ primeros meses no tiene obra social, lo cual reduce el segmento atendible en el 
 
 ---
 
-### DD-04 — Stack: TypeScript end-to-end
+### DD-04 — Stack: Python (FastAPI) + React/Vite (REVISADO 2026-10-11)
 
-**Decisión**: Next.js (web) + NestJS (API) + PostgreSQL + Redis, TypeScript en todo el stack.
+**Decisión**: backend en **Python 3.12 + FastAPI** (SQLAlchemy 2.0 + Alembic, PostgreSQL 16 con RLS,
+Redis 7 + Celery, Docker) y frontend en **React + TypeScript + Vite** (Tailwind + shadcn/ui). Reemplaza
+la decisión original "TypeScript end-to-end" (Next.js + NestJS), revocada por el usuario el 2026-10-11.
 
-**Contexto**: el stack nunca se deduce del discovery de producto; es decisión técnica pura.
+**Contexto**: el stack nunca se deduce del discovery de producto; es decisión técnica pura. El usuario
+fijó el stack nuevo el 2026-10-11 (back: Python / FastAPI / JWT / SQLAlchemy / PostgreSQL / Redis /
+Docker; front: React / TypeScript / Vite).
 
-**Alternativas consideradas**: (a) TypeScript end-to-end, (b) Python (FastAPI + React),
-(c) Node (NestJS + React).
+**Alternativas consideradas**: (a) TypeScript end-to-end — **original, revocada**, (b) Python (FastAPI +
+React) — **elegida**, (c) Node (NestJS + React).
 
-**Justificación**: un solo lenguaje, un monorepo, frontera de autorización multi-tenant
-explícita en un solo lugar, y equipo contratable en Argentina. El schema-first con Zod
-compartido entre cliente y servidor elimina toda una clase de bugs de validación. La parte
-difícil (XML de ARCA, token WSAA, X.509 por tenant) se resuelve con esquemas estrictos en
-cualquier stack.
+**Justificación**: FastAPI es el framework async de referencia en Python con **OpenAPI automático**
+(Pydantic v2): el contrato API se genera y el frontend consume tipos TypeScript derivados de ese
+OpenAPI — elimina la misma clase de bugs de validación que daba el Zod compartido. Python tiene el
+mejor ecosistema del proyecto para XML/XSD de ARCA (`lxml` + `xmlschema`), criptografía X.509
+(`cryptography`), PDF (ReportLab/WeasyPrint) y colas async (Celery). React + Vite entrega un SPA
+liviano con el ecosistema TS/Zod del lado cliente.
 
-**Trade-offs aceptados**: el ecosistema de IA en Python es mejor — pero la IA se consume por
-HTTP como servicio externo, no justifica un segundo lenguaje en el codebase.
+**Trade-offs aceptados**: dos lenguajes en el codebase (Python + TypeScript); el frontend pierde
+SSR/server components (no los requiere: la UI interna es de gestión); el contrato front↔back es el
+OpenAPI de FastAPI en lugar de un archivo Zod compartido.
 
 ---
 
@@ -180,20 +186,23 @@ la capa normativa con un salesperson, no con un free tier.
 
 ---
 
-### DD-10 — Auth: sesión httpOnly, no JWT en `localStorage`
+### DD-10 — Auth: JWT en cookie httpOnly, no JWT en `localStorage` (REVISADO 2026-10-11)
 
-**Decisión**: cookie `httpOnly` + `Secure` + `SameSite=Lax`, con refresh token rotativo.
+**Decisión**: **JWT** como formato de token (access corto + refresh rotativo), servido en cookie
+`httpOnly` + `Secure` + `SameSite=Lax`. El usuario fijó "JWT para autenticación" el 2026-10-11; se
+mantiene el requisito de seguridad original: **el token nunca va a `localStorage`** (expuesto a XSS).
 
 **Contexto**: había que elegir el esquema de sesión.
 
-**Alternativas consideradas**: (a) JWT en `localStorage`, (b) sesión con cookie httpOnly,
-(c) JWT en cookie.
+**Alternativas consideradas**: (a) JWT en `localStorage` — descartado, (b) sesión opaca con cookie
+httpOnly — original, (c) **JWT en cookie httpOnly** — elegida.
 
-**Justificación**: (a) expone el token a XSS — inaceptable en un sistema con datos de salud.
-(b) el token no es accesible desde JS; el refresh rotativo permite detectar robo de token.
+**Justificación**: (a) expone el token a XSS — inaceptable en un sistema con datos de salud. (b) sigue
+siendo válido pero no era el pedido del usuario. (c) mantiene la protección XSS de la cookie httpOnly,
+respeta el formato JWT pedido y el refresh rotativo permite detectar robo de token.
 
-**Trade-offs aceptados**: slightly más complejo que JWT puro (necesita manejo de sesión
-servidor o tabla de sesiones).
+**Trade-offs aceptados**: el SPA no guarda nada en localStorage; el refresh se hace con cookie
+httpOnly; CSRF mitigado con `SameSite=Lax` + verificación de origen.
 
 ---
 

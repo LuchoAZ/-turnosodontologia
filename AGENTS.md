@@ -7,26 +7,28 @@
 
 ## Stack Tecnológico
 
-**Decisión DD-04 — TypeScript end-to-end.** Fuente: [knowledge-base/02_descripcion_general.md](knowledge-base/02_descripcion_general.md)
+**Decisión DD-04 (revisada 2026-10-11) — Python (FastAPI) + React/Vite.** Fuente: [knowledge-base/02_descripcion_general.md](knowledge-base/02_descripcion_general.md)
 
 | Capa | Tecnología | Versión mínima |
 |------|-----------|----------------|
-| Lenguaje | TypeScript | 5.6+ (strict mode, sin `any` en dominio) |
-| Runtime | Node.js | 22 LTS |
-| Frontend | Next.js (App Router) | 15 |
-| UI | Tailwind CSS + shadcn/ui | 4 / latest |
-| Formularios | React Hook Form + Zod | latest — **el mismo schema Zod valida frontend y backend** |
-| Backend | NestJS | 11 |
-| ORM | Prisma | 6 |
+| Lenguaje backend | Python | 3.12 (type hints estrictos con mypy, sin `Any` en dominio) |
+| Framework backend | FastAPI | latest (async nativo, OpenAPI automático) |
+| ORM | SQLAlchemy 2.0 + Alembic | 2.0 (migraciones versionadas) |
+| Validación | Pydantic v2 + pydantic-settings | 2.0 — **el contrato front↔back es el OpenAPI de FastAPI (Pydantic v2)** |
 | Base de datos | PostgreSQL | 16 (RLS nativo por tenant) |
-| Colas / cache | Redis + BullMQ | 7 / 5 |
+| Colas / cache | Redis + Celery | 7 / 5 |
 | Object storage | S3-compatible | — |
-| XML | `fast-xml-parser` + esquemas XSD ARCA | latest |
-| Crypto | `node-forge` / `x509.js` | latest (X.509 por tenant) |
-| PDF | Playwright + PDFKit | latest |
-| Auth | Sesión httpOnly + refresh rotativo | — (DD-10, no JWT en localStorage) |
-| Observabilidad | OpenTelemetry + Sentry | latest |
-| Tests | Vitest + Testcontainers + Playwright | latest (Postgres real, no mocks de DB) |
+| XML | `lxml` + `xmlschema` (esquemas XSD ARCA) | latest |
+| Crypto | `cryptography` | latest (X.509 por tenant) |
+| PDF | ReportLab / WeasyPrint | latest |
+| Frontend | React + TypeScript + Vite | 18 / 5 / 6 |
+| UI | Tailwind CSS + shadcn/ui | 4 / latest |
+| Formularios | React Hook Form + Zod | latest (validación solo en el cliente) |
+| Auth | JWT (access + refresh rotativo) en cookie httpOnly | — (DD-10 revisada, no JWT en localStorage) |
+| Cliente HTTP (back) | httpx | latest |
+| Observabilidad | OpenTelemetry (Python SDK) + Sentry | latest (modo degradado) |
+| Tests | pytest + Testcontainers + Playwright (back/e2e); Vitest (front) | latest (Postgres real, no mocks de DB) |
+| Contenedores | Docker + docker-compose | — |
 
 ---
 
@@ -60,8 +62,8 @@ Fuente de verdad: `.atl/skill-registry.md` (generado por `skill-registry`).
 | Agente | Rol | Skills que carga |
 |--------|-----|------------------|
 | **sdd-orchestrator** | Coordinador primario — delega vía `task`, nunca ejecuta inline | active-orchestrator, agents-md-generator, discovery-research, find-skills, kb-creator, roadmap-generator, skill-creator, skill-registry, web-scraper + openspec-{explore,propose,apply,archive,update,sync} |
-| **Backend Core** | NestJS / Prisma / Postgres — vertical slices API | nestjs-best-practices, prisma-client-api, supabase-postgres-best-practices, tdd |
-| **Frontend** | Next.js 15 + shadcn/ui — vertical slices UI | vercel-react-best-practices, shadcn, tdd, playwright-cli |
+| **Backend Core** | FastAPI / SQLAlchemy / Postgres — vertical slices API | tdd, supabase-postgres-best-practices (las skills Python/FastAPI se instalarán al tocar el backend) |
+| **Frontend** | React + Vite + shadcn/ui — vertical slices UI | vercel-react-best-practices, shadcn, tdd, playwright-cli |
 | **QA / E2E** | Gates de integración y aislamiento | playwright-cli, tdd, supabase-postgres-best-practices |
 
 Cargá la skill correspondiente al contexto ANTES de escribir código.
@@ -90,11 +92,11 @@ El plan completo está en [CHANGES.md](CHANGES.md). Resumen:
 - **NUNCA** mergear un change que toque una tabla con `tenant_id` sin su **test de aislamiento cross-tenant** → RN-TEN-02 es gate de merge, no sugerencia: `cross-tenant leak = 0`.
 - **NUNCA** resolver el `tenant_id` desde el body/query de la petición → siempre del token/sesión; abrir cada sesión de DB con `SET LOCAL app.current_tenant`; RLS activo en toda tabla de negocio (`tenant_id NOT NULL`) — DD-07.
 - **NUNCA** hacer `UPDATE`/`DELETE` sobre datos de historia clínica → append-only con `supersedes_id` (Ley 26.529 arts. 12, 16, 18) — RN-CMP-02.
-- **NUNCA** llamar a ARCA de forma síncrona dentro de un request → Outbox + cola BullMQ con estados `BORRADOR → PENDIENTE → EMITIDO/RECHAZADO` — DD-06.
+- **NUNCA** llamar a ARCA de forma síncrona dentro de un request → Outbox + cola Celery (Redis) con estados `BORRADOR → PENDIENTE → EMITIDO/RECHAZADO` — DD-06.
 - **NUNCA** emitir un comprobante con el tipo elegido a mano → derivarlo del estado fiscal del cliente (obra social → A, monotributista → C, etc.).
 - **NUNCA** guardar certificados X.509 ni claves en claro o en logs → cifrado por tenant; validar el CUIT del certificado contra el tenant; WSAA cacheado con expiración conocida.
-- **NUNCA** usar `any` en el dominio → TypeScript strict; el mismo schema Zod valida frontend y backend.
-- **NUNCA** mockear la base de datos en flujos con RLS/tenancy → Postgres real (Vitest + Testcontainers).
+- **NUNCA** usar `Any` en el dominio → Python con type hints estrictos (mypy strict); el contrato front↔back es el OpenAPI de FastAPI (Pydantic v2).
+- **NUNCA** mockear la base de datos en flujos con RLS/tenancy → Postgres real (pytest + Testcontainers).
 - **NUNCA** construir por capas → **vertical slices** (DD-03): cada change entrega API + UI de su capacidad.
 - **NUNCA** buildear, commitear, amendar ni pushear sin pedido explícito del usuario → conventional commits, sin co-autoría IA.
 - **NUNCA** arrancar un change sin leer `CHANGES.md` y su sección "Leer antes" → primero identificar dependencias y KB relevante.

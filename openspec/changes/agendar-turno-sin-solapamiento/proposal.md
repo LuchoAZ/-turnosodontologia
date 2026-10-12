@@ -12,12 +12,12 @@ Vale la pena **ahora** porque es el primer valor demostrable de la "ruta del tur
 
 ## What Changes
 
-- **Endpoint `POST /api/v1/appointments`** (NestJS 11): crea un turno reservando **dos recursos a la vez** (`professional_id` + `chair_id`, RN-AG-01). Responde `201` con el turno creado.
+- **Endpoint `POST /api/v1/appointments`** (FastAPI, Python 3.12): crea un turno reservando **dos recursos a la vez** (`professional_id` + `chair_id`, RN-AG-01). Responde `201` con el turno creado.
 - **Validación de solapamiento en aplicación** dentro de una transacción: detecta conflicto y responde `409` identificando el recurso (`professional` | `chair`) y el **rango en conflicto** (RN-AG-02, RN-AG-10). Casos: profesional ya ocupado, sillón ya ocupado, paciente con turno solapado para el mismo profesional.
-- **Validación de entrada con Zod** (schema compartido `packages/shared`, mismo esquema en frontend y backend): `422` con detalle de campos ante payload inválido.
+- **Validación de entrada con Pydantic v2** (schema Pydantic v2 en el backend que genera el OpenAPI; el frontend consume tipos TS generados del OpenAPI): `422` con detalle de campos ante payload inválido.
 - **Derivación de duración por tipo de práctica** con herencia de buffers previo/posterior de `availability_rule` (RN-AG-03): el turno ocupa duración + buffers; `inicio`/`fin` se almacenan como `timestamptz` UTC (RN-AG-09).
 - **Aislamiento multi-tenant**: `tenant_id` se resuelve **solo de la sesión/token** (nunca del body, RN-TEN-03); RLS activa en `appointment`; acceso a un recurso de otro tenant responde `404` (aislado, no lista el recurso).
-- **Formulario mínimo de UI** (Next.js 15, shadcn/ui) que consume el endpoint: elegir paciente, profesional, sillón, tipo de práctica y horario; mapa de errores `409` → conflicto visible, `422` → errores de campo, `404` → recurso inexistente.
+- **Formulario mínimo de UI** (React 18 + Vite, shadcn/ui) que consume el endpoint: elegir paciente, profesional, sillón, tipo de práctica y horario; mapa de errores `409` → conflicto visible, `422` → errores de campo, `404` → recurso inexistente.
 - **Garantía dura en la base de datos**: el modelo `appointment` ya declara `EXCLUDE USING gist` sobre `chair_id` y `professional_id` con `tstzrange` (provisto por las dependencias C-02/C-07; este change la **ejerce y la testea**, no la reimplementa).
 
 ## Capabilities
@@ -30,9 +30,9 @@ Vale la pena **ahora** porque es el primer valor demostrable de la "ruta del tur
 
 ## Impact
 
-- **API (`apps/api`)**: nuevo módulo de feature `appointments` (controlador + servicio + DTO Zod + guard de tenant) dentro del slice vertical de la capacidad.
-- **Schemas compartidos (`packages/shared`)**: contrato Zod del payload `CreateAppointment` y el schema de respuesta/errores, compartido web↔api.
-- **UI (`apps/web`)**: página/formulario mínimo de agendamiento (ruta `/turnos/nuevo`), consumiendo el mismo schema Zod para validar antes del submit.
-- **Tests**: suite de integración con Postgres real (Testcontainers) — alta ok, solape por `professional_id`, solape por `chair_id`, solape RN-AG-10 del paciente, doble booking bajo concurrencia rechazado por la BD, `422` de Zod, y **test de aislamiento cross-tenant (gate RN-TEN-02)**. E2E mínimo con Playwright del formulario.
+- **API (`backend/app/domain/agenda`)**: nuevo módulo de feature `appointments` (router + service + DTO Pydantic + dependencia de tenant) dentro del slice vertical de la capacidad.
+- **Schemas (`backend/app/schemas`)**: contrato Pydantic v2 del payload `CreateAppointment` y el schema de respuesta/errores, expuesto vía el OpenAPI que consume el frontend.
+- **UI (`frontend/src/features/agenda`)**: página/formulario mínimo de agendamiento (ruta `/turnos/nuevo`), consumiendo los tipos TS generados del OpenAPI (con Zod solo en el cliente, para validar antes del submit).
+- **Tests**: suite de integración con Postgres real (Testcontainers) — alta ok, solape por `professional_id`, solape por `chair_id`, solape RN-AG-10 del paciente, doble booking bajo concurrencia rechazado por la BD, `422` de Pydantic, y **test de aislamiento cross-tenant (gate RN-TEN-02)**. E2E mínimo con Playwright del formulario.
 - **Dependencias listadas, NO implementadas**: C-01 (foundation-setup), C-02 (core-models-tenancy, aporta modelo `appointment` con `EXCLUDE` + RLS), C-03 (auth-sessions, aporta sesión y scoping de tenant), C-05 (clinic-setup, aporta `chair`, `professional`, `availability_rule`), C-06 (patients, aporta `patient`).
 - **Fuera de alcance (explícito)**: reprogramar (PATCH/reschedule), cancelar, check-in/complete, lista de espera, cálculo de disponibilidad/grilla (`GET /availability`), portal paciente y WhatsApp — pertenecen a C-07/C-08/C-19/C-20 y no entran en este change.

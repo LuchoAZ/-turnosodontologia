@@ -2,7 +2,7 @@
 
 ## Context
 
-Ver `proposal.md` para motivación y `specs/platform-runtime/spec.md` para el contrato de comportamiento. El repositorio hoy solo contiene documentación (`knowledge-base/`, `discovery/`, `CHANGES.md`) y el andamiaje de OpenSpec (`openspec/`); no hay código, ni `package.json`, ni workspaces, ni CI. `knowledge-base/08_arquitectura_propuesta.md` ya fija la estructura de directorios objetivo, el stack y la estrategia de CI; este diseño la operacionaliza para C-01 sin introducir modelos de negocio.
+Ver `proposal.md` para motivación y `specs/platform-runtime/spec.md` para el contrato de comportamiento. El repositorio hoy solo contiene documentación (`knowledge-base/`, `discovery/`, `CHANGES.md`) y el andamiaje de OpenSpec (`openspec/`); no hay código, ni `pyproject.toml`/`package.json`, ni carpetas `backend/`/`frontend/`, ni CI. `knowledge-base/08_arquitectura_propuesta.md` ya fija la estructura de directorios objetivo, el stack y la estrategia de CI; este diseño la operacionaliza para C-01 sin introducir modelos de negocio.
 
 Restricción dominante: **strict TDD** con vertical slices y **governance MEDIO** (implementar con checkpoints y surface decisiones). Como C-01 es la raíz del árbol de dependencias, cualquier decisión de tooling acá se propaga a C-02+. Se prioriza el camino con menos piezas móviles y menos ambigüedad para 1 developer.
 
@@ -10,7 +10,7 @@ Restricción dominante: **strict TDD** con vertical slices y **governance MEDIO*
 
 **Goals:**
 - Dejar el repo instalable y construible con un solo comando, con lint/typecheck/build/test reproducibles.
-- Habilitar el harness de tests (Vitest + Testcontainers + Playwright) para que C-02+ pueda hacer TDD real desde su primer task.
+- Habilitar el harness de tests (pytest + Testcontainers en el backend; Vitest en el frontend; Playwright para e2e) para que C-02+ pueda hacer TDD real desde su primer task.
 - Implementar el contrato de `platform-runtime` (validación de config, `/health`, `/ready`, observabilidad) con tests que fallan primero.
 - Tener un entorno local reproducible (`docker-compose`) y un pipeline de CI que bloquee regresiones de lint/typecheck/test/build.
 
@@ -23,78 +23,78 @@ Restricción dominante: **strict TDD** con vertical slices y **governance MEDIO*
 
 ## Decisions
 
-**D1 — Monorepo con npm workspaces + Turborepo.**
-`package.json` raíz con `workspaces: ["apps/*", "packages/*"]`; `turbo.json` orquesta `lint`/`typecheck`/`build`/`test` con caché y `dependsOn` correctos (p. ej. `build` depende de `^build` para los paquetes).
-- Alternativas: **Nx** (más potente pero más curva y opinado, innecesario para 1 dev), **pnpm workspaces** (excelente, pero agrega un gestor no presente en el stack y fricción en CI), **scripts npm puros** (sin caché ni grafo de tareas; se degrada al agregar paquetes).
-- Por qué: Node 22 LTS ya trae npm; Turborepo da caché y orden de build sin imponer un framework.
+**D1 — Estructura `backend/` + `frontend/`, sin monorepo tooling.**
+Dos carpetas independientes: `backend/` (Python 3.12 + FastAPI, gestionado con `pyproject.toml` + `uv`/venv) y `frontend/` (React + TypeScript + Vite, gestionado con npm). No hay npm workspaces ni Turborepo: cada lado tiene su propio toolchain y sus scripts; `docker-compose.yml` orquesta la infraestructura local.
+- Alternativas: **monorepo con npm workspaces + Turborepo** (irrelevante con dos lenguajes y dos gestores distintos: Turborepo solo orquesta JS), **Nx** (más curva y opinado, innecesario para 1 dev), **pnpm workspaces** (no aplica al backend Python).
+- Por qué: con Python y TypeScript no hay un grafo de tareas compartido; la separación por carpeta es el camino con menos piezas móviles.
 
-**D2 — Un único manejador de validación de entorno: Zod.**
-La validación de config al boot usa un esquema Zod por app, con `parse` que lanza y hace fallar el arranque; el mismo Zod es el lenguaje de validación end-to-end que la KB fija para DTOs (schema-first, compartido web↔api).
-- Alternativas: **Joi** (la KB lo menciona como alternativa y es lo idiomático en NestJS, pero crearía dos librerías de validación en el proyecto).
-- Por qué: una sola librería de validación en todo el stack evita divergencias web↔api y ya es obligatoria para C-02+.
+**D2 — Validación de entorno por lado: pydantic-settings (backend) + Zod (frontend).**
+El backend valida su configuración al boot con una clase `Settings` de `pydantic-settings` que lanza al parsear y hace fallar el arranque. El frontend, si valida variables de build, lo hace con Zod (solo cliente).
+- Alternativas: un único lenguaje de validación end-to-end (ya no aplica: el contrato de datos entre front y back es el OpenAPI de FastAPI, no un esquema Zod compartido).
+- Por qué: cada runtime usa su librería idiomática; `pydantic-settings` es el estándar de config tipada en FastAPI.
 
-**D3 — Runner de tests: Vitest para unit/integration; Playwright para e2e.**
-Vitest en todos los paquetes (rápido, ESM-first, compatible con la config TS strict). Los tests de integración usan **Testcontainers** (Postgres 16 + Redis 7 reales, sin mocks de DB). Playwright cubre e2e de la web.
-- Alternativas: **Jest** (default de NestJS; buena integración con `TestingModule`, pero runner distinto al de web y más lento en monorepo).
-- Por qué: la KB 02 y el stack registry fijan Vitest + Testcontainers + Playwright. Trade-off registrado en Riesgos (integración con utilidades de testing de Nest).
+**D3 — Runners de tests por lado: pytest (backend) y Vitest (frontend); Playwright para e2e.**
+pytest + pytest-asyncio corren unit e integration del backend; los tests de integración usan **Testcontainers (Python)** con Postgres 16 + Redis 7 reales (sin mocks de DB). Vitest cubre el frontend. Playwright cubre e2e.
+- Alternativas: **Jest** (no aplica: el backend es Python), **un solo runner** (imposible con dos lenguajes).
+- Por qué: cada lado usa su runner idiomático; la KB 02 y el stack registry fijan pytest/Vitest/Playwright.
 
-**D4 — Sondas de salud con `@nestjs/terminus`.**
-`/health` (liveness) y `/ready` (readiness) implementados con Terminus; la readiness registra indicadores de Postgres y Redis. La liveness no registra indicadores de dependencias.
-- Alternativas: **controlador artesanal** (menos dependencias, pero reimplementa semántica y no se integra con OTEL).
-- Por qué: Terminus es estándar en NestJS 11 y expone exactamente la distinción liveness/readiness que pide el spec.
+**D4 — Sondas de salud con probes asíncronos en FastAPI.**
+`/health` (liveness) y `/ready` (readiness) son endpoints FastAPI; la readiness ejecuta probes asíncronos a Postgres y Redis. La liveness no toca dependencias.
+- Alternativas: **dependencia de health de terceros** (innecesaria: el contrato es trivial con FastAPI).
+- Por qué: el contrato HTTP no cambia (mismos `/health` y `/ready`); solo cambia la implementación (ya no `@nestjs/terminus`), con probes inyectables para testear el `503`.
 
-**D5 — Validación de config como función pura, inyectada en el boot.**
-La lógica de validación vive en una función pura `loadConfig(env) → Config` (testeable sin levantar Nest); `main.ts` la invoca al arrancar y aborta con `process.exit(1)` ante error. Esto define la costura de test principal (ver "Seams de TDD").
+**D5 — Validación de config como función/clase testeable, inyectada en el boot.**
+La lógica vive en `load_config(env) → Config` (clase `pydantic-settings`) testeable sin levantar FastAPI; `main.py` la invoca al arrancar y aborta el proceso ante error. Define la costura de test principal (ver "Seams de TDD").
 
 **D6 — Observabilidad con un bootstrap compartido y modo degradado.**
-Un helper en `packages/shared` inicializa OpenTelemetry (nombre de servicio + contexto de correlación extensible) y Sentry; cada app lo invoca en su entrypoint. Si falta `OTEL_EXPORTER_OTLP_ENDPOINT` o `SENTRY_DSN`, arranca en modo degradado sin fallar (el spec lo exige para no bloquear dev/CI).
-- Alternativas: inicialización duplicada por app (deriva y comportamiento divergente).
+Un módulo en `backend/app/infra` inicializa OpenTelemetry (Python SDK: nombre de servicio + contexto de correlación extensible) y `sentry-sdk`; el entrypoint lo invoca. Si falta `OTEL_EXPORTER_OTLP_ENDPOINT` o `SENTRY_DSN`, arranca en modo degradado sin fallar (el spec lo exige para no bloquear dev/CI).
+- Alternativas: inicialización duplicada por entrypoint (deriva y comportamiento divergente).
 - Por qué: comportamiento uniforme y un único punto donde C-02+ agrega `tenant_id` al contexto.
 
-**D7 — Prisma: schema sin modelos + migración baseline vacía.**
-`apps/api/prisma/schema.prisma` con `datasource` + `generator` y **cero modelos**; una migración baseline (DDL vacío o mínimo) demuestra que el pipeline `prisma migrate` funciona en CI antes de que C-02 agregue modelos reales.
+**D7 — SQLAlchemy 2.0 engine + baseline de Alembic vacío.**
+Configurar el engine de SQLAlchemy y una migración baseline de Alembic (DDL vacío o mínimo) que demuestra que el pipeline `alembic upgrade` funciona en CI antes de que C-02 agregue modelos reales.
 - Alternativas: no crear ninguna migración hasta C-02 (deja el pipeline sin validar en CI).
-- Por qué: valida la cadena migrate/generate sin adelantar el dominio de C-02.
+- Por qué: valida la cadena migrate/upgrade sin adelantar el dominio de C-02.
 
-**D8 — CI en GitHub Actions con jobs paralelos por app + jobs de harness.**
-Jobs: `api` (lint→typecheck→unit→build), `web` (lint→typecheck→unit→build), `integration` (smoke con Testcontainers Postgres+Redis) y `e2e` (Playwright smoke). Caché de npm y de Turborepo. Todos bloquean merge.
-- Alternativas: un único job secuencial (más simple, mucho más lento y sin paralelismo api/web) o correr e2e fuera de CI (deja el harness sin probar).
-- Por qué: 08 fija `lint → typecheck → unit → integration → e2e → build`; C-01 lo hace real con un test de humo por nivel.
+**D8 — CI en GitHub Actions con jobs backend, frontend, integration y e2e.**
+Jobs: `backend` (`ruff`→`mypy`→`pytest`→build), `frontend` (`eslint`→`tsc`→`vitest`→build), `integration` (smoke con Testcontainers Postgres+Redis) y `e2e` (Playwright smoke). Caché de `uv`/pip y de npm. Todos bloquean merge.
+- Alternativas: un único job secuencial (más lento y sin separación backend/frontend) o correr e2e fuera de CI (deja el harness sin probar).
+- Por qué: 08 fija `ruff → mypy / tsc → unit → integration → e2e → build`; C-01 lo hace real con un test de humo por nivel.
 
-**D9 — Bootstrap de apps con los CLIs oficiales, luego adaptación al monorepo.**
-Generar `apps/web` con `create-next-app` (App Router, TS, Tailwind) y `apps/api` con `nest new`, y luego plegarlos al workspace (eliminar lockfiles anidados, alinear versiones, conectar al `tsconfig` base y a Turborepo).
+**D9 — Bootstrap con tooling oficial (Vite + uv/pip), luego adaptación a la estructura.**
+Generar `frontend/` con `npm create vite` (React + TS + Tailwind) e inicializar `backend/` con `uv init`/`pyproject.toml` + la plantilla FastAPI; luego alinear ambos a la estructura de directorios de `08_arquitectura_propuesta.md`.
 - Alternativas: escribir todo el boilerplate a mano (más control, más error-prone y más cosas que mantener).
-- Por qué: arranca desde configuraciones oficiales de Next 15 / Nest 11 y reduce el riesgo de versiones/flags incorrectos.
+- Por qué: arranca desde configuraciones oficiales de Vite/FastAPI y reduce el riesgo de versiones/flags incorrectos.
 
-**D10 — TypeScript strict centralizado.**
-Un `tsconfig.base.json` con `strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`, etc.; cada app/paquete extiende y sólo overridea lo imprescindible (`module`/`moduleResolution`, `jsx`, `lib`). Sin `any` en dominio (regla de la KB).
+**D10 — Typing estricto por lado: `mypy` strict (backend) + `tsc` strict (frontend).**
+`backend/pyproject.toml` con `mypy` en modo strict (sin `Any` en dominio); `frontend/tsconfig.json` con `strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`, etc. Cada lado cubre su propio dominio sin escapar del tipado.
 
 ### Seams de TDD (a confirmar antes de escribir tests)
 
 Strict TDD exige acordar las costuras públicas antes del primer test. Para C-01 las costuras propuestas son:
-- **Config**: `loadConfig(env) → Config` (pura; sin acceso a `process` global más allá del `env` inyectado). Casos: config completa, var ausente, var inválida.
-- **Readiness**: indicador de dependencia detrás de una interfaz (probe) para inyectar un probe que falla y verificar `503` sin romper el Postgres real.
-- **HTTP**: `GET /health` y `GET /ready` como contrato observable (test de integración con `supertest`).
+- **Config**: `load_config(env) → Config` (clase `pydantic-settings`; sin acceso a `os.environ` global más allá del `env` inyectado). Casos: config completa, var ausente, var inválida.
+- **Readiness**: probe de dependencia detrás de una interfaz para inyectar un probe que falla y verificar `503` sin romper el Postgres real.
+- **HTTP**: `GET /health` y `GET /ready` como contrato observable (test de integración con `httpx.AsyncClient`/`TestClient`).
 - **Observabilidad**: bootstrap que devuelve un estado (`configured` | `degraded`) y una verificación de "tracer inicializado", sin depender de un backend real (exporter no-op en test).
 
 ## Risks / Trade-offs
 
-- **[Vitest vs utilidades de testing de NestJS 11]** NestJS documenta Jest; `@nestjs/testing` es agnóstico, pero algunas utilidades asumen Jest. → Mitigación: usar Vitest con API compatible; si una suite específica de Nest se resiste, aislarla y evaluar Jest solo para esa suite (decisión a surfacear si ocurre).
+- **[pytest-asyncio y el event loop]** Los tests async de FastAPI dependen de la configuración de `asyncio_mode`/fixtures de event loop; un desajuste de versión rompe suites enteras. → Mitigación: fijar versiones de `pytest`/`pytest-asyncio` en `pyproject.toml` y usar fixtures explícitos de event loop.
 - **[Testcontainers en CI]** Requiere Docker en el runner (disponible en GitHub `ubuntu-latest`) y puede ser lento. → Mitigación: imágenes pineadas, contenedores reutilizables entre tests, y el job de integración corre solo un smoke; si el tiempo crece, separar a job programado.
-- **[Bootstrap con CLIs oficiales + workspaces]** Next/Nest generan configs y lockfiles propios que chocan al hoisting de npm workspaces. → Mitigación: borrar lockfiles anidados, fijar `engines`, y validar con un `npm install` limpio en CI.
+- **[Bootstrap con tooling oficial (Vite/uv)]** `npm create vite`/`uv init` generan configuraciones propias que hay que alinear con la estructura y los puertos de la KB. → Mitigación: fijar `engines`/`requires-python` y validar con un `npm install` + `uv sync` limpios en CI.
 - **[Deriva entre esquema de env y `.env.example`]** Un cambio de config podría no documentarse. → Mitigación: `.env.example` como artefacto verificado por un test que falla si una variable del esquema no está documentada.
-- **[Estructura prematura]** Crear paquetes que C-02+ aún no usan. → Mitigación: crear solo los paquetes que la estructura de 08 exige; `contracts`/`ui-kit` quedan como esqueletos vacíos con `package.json` y `tsconfig`, sin contenido inventado.
+- **[Estructura prematura]** Crear carpetas/módulos que C-02+ aún no usan. → Mitigación: crear solo las carpetas que la estructura de 08 exige; `backend/app/*` y `frontend/src/*` quedan como esqueletos vacíos, sin contenido inventado.
 - **[Alcance creep hacia features]** El andamiaje tienta a adelantar modelos o auth. → Mitigación: barrera explícita en proposal/design (Non-Goals) y tasks sin ningún item de dominio.
 
 ## Migration Plan
 
 Greenfield: no hay datos ni sistemas en producción, así que no hay migración de datos.
 
-1. **Bootstrap estructural** (no-TDD): workspaces, tsconfig base, tooling, ejecutar CLIs de Next/Nest, `docker-compose.yml`, `.gitignore`, `.env.example`, Prisma baseline, Turborepo. Necesario antes de poder TDD (no existe harness todavía).
-2. **TDD de `platform-runtime`** (red → green → refactor), en orden: `loadConfig` → `/health` → `/ready` (con probe inyectable) → bootstrap de observabilidad (tracing y captura de errores).
+1. **Bootstrap estructural** (no-TDD): estructura `backend/`+`frontend/`, tooling (`ruff`/`mypy` + ESLint/Prettier), `npm create vite` + `uv init`/plantilla FastAPI, `docker-compose.yml`, `.gitignore`, `.env.example`, baseline de Alembic. Necesario antes de poder TDD (no existe harness todavía).
+2. **TDD de `platform-runtime`** (red → green → refactor), en orden: `load_config` → `/health` → `/ready` (con probe inyectable) → bootstrap de observabilidad (tracing y captura de errores).
 3. **CI**: agregar los jobs y verificar que el pipeline verde reproduce lint/typecheck/unit/integration/e2e/build.
 4. **Rollback**: no hay despliegue; revertir el cambio es `git revert` del commit del change. El andamiaje es idempotente (re-ejecutable) por diseño.
 
 ## Open Questions
 
-- **Versiones exactas al momento de implementar**: los pins de Node/Next/Nest/Prisma/Redis y las tags de imagen Docker se fijan al ejecutar C-01 (las "latest"/"mínima" de la KB se traducen a versiones concretas). No cambia el approach ni el spec, solo los valores de pin.
+- **Versiones exactas al momento de implementar**: los pins de Python/FastAPI/SQLAlchemy/React/Vite/Redis y las tags de imagen Docker se fijan al ejecutar C-01 (las "latest"/"mínima" de la KB se traducen a versiones concretas). No cambia el approach ni el spec, solo los valores de pin.

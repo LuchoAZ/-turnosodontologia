@@ -2,65 +2,68 @@
 
 ## Stack tecnológico
 
-**Decisión DD-04 — TypeScript end-to-end.** Un lenguaje, un repo, frontera de autorización
-multi-tenant explícita en un solo lugar, y equipo contratable en Argentina.
+**Decisión DD-04 — Stack Python (FastAPI) + React/Vite (REVISADO 2026-10-11).** El usuario fijó el
+stack el 2026-10-11; reemplaza la decisión original "TypeScript end-to-end" (Next.js + NestJS).
 
 | Capa | Tecnología | Versión mínima | Justificación |
 |------|-----------|----------------|---------------|
-| Lenguaje | TypeScript | 5.6+ | strict mode obligatorio, sin `any` en dominio |
-| Runtime | Node.js | 22 LTS | LTS, soporte native de crypto para X.509 |
-| Frontend | Next.js (App Router) | 15 | SSR para el portal del paciente; RSC para la UI interna |
-| UI | Tailwind CSS + shadcn/ui | 4 / latest | accesible por defecto, sin lock-in visual |
-| Formularios | React Hook Form + Zod | latest | **el mismo esquema Zod valida en frontend y backend** |
-| Backend | NestJS | 11 | DI nativa, guards para RBAC, integración con `@nestjs/bullmq` |
-| ORM | Prisma | 6 | migraciones versionadas + tipos de dominio |
+| Lenguaje backend | Python | 3.12 | type hints estrictos (mypy), sin `Any` en dominio |
+| Framework backend | FastAPI | latest | async nativo, OpenAPI automático (Pydantic v2), DI liviana |
+| ORM | SQLAlchemy 2.0 + Alembic | 2.0 | migraciones versionadas; sesión con `SET LOCAL app.current_tenant` |
+| Validación | Pydantic v2 + pydantic-settings | 2.0 | esquemas de API + config de env; contrato OpenAPI compartido con el frontend |
 | Base de datos | PostgreSQL | 16 | RLS nativo (aislamiento), JSONB para payloads ARCA |
-| Colas / cache | Redis + BullMQ | 7 / 5 | jobs de ARCA, WhatsApp, notifications, idempotencia |
+| Colas / cache | Redis + Celery | 7 / 5 | jobs de ARCA, WhatsApp, notifications, idempotencia |
 | Object storage | S3-compatible | — | radiografías (futuro), PDFs firmados, copias autenticadas |
-| XML | `fast-xml-parser` + esquemas XSD ARCA | latest | serializar/validar contra los WSDL oficiales |
-| Crypto | `node-forge` / `x509.js` | latest | **certificados X.509 por tenant**, firma, lectura de CSR |
-| PDF | Playwright + PDFKit | latest | comprobantes, copias autenticadas, contratos |
-| Auth | Sesión httpOnly + refresh rotativo | — | no JWT en `localStorage` (XSS) — ver DD-10 |
-| Observabilidad | OpenTelemetry + Sentry | latest | trazas por tenant, errores con contexto fiscal |
-| Tests | Vitest + Testcontainers + Playwright | latest | Postgres real en tests, no mocks de DB |
+| XML | `lxml` + `xmlschema` (XSD ARCA) | latest | serializar/validar contra los WSDL oficiales |
+| Crypto | `cryptography` | latest | **certificados X.509 por tenant**, firma, lectura de CSR |
+| PDF | ReportLab / WeasyPrint | latest | comprobantes, copias autenticadas, contratos |
+| Frontend | React + TypeScript + Vite | 18 / 5 / 6 | SPA de gestión, sin SSR (UI interna) |
+| UI | Tailwind CSS + shadcn/ui | 4 / latest | accesible por defecto, sin lock-in visual |
+| Formularios | React Hook Form + Zod | latest | validación cliente; el contrato con el back es el OpenAPI |
+| Auth | JWT (access + refresh rotativo) en cookie httpOnly | — | no JWT en `localStorage` (XSS) — ver DD-10 |
+| Cliente HTTP (back) | httpx | latest | integraciones externas (ARCA, Meta, Mercado Pago) |
+| Observabilidad | OpenTelemetry (Python SDK) + Sentry | latest | trazas por tenant, errores con contexto fiscal |
+| Tests | pytest + Testcontainers + Playwright (Python); Vitest (front) | latest | Postgres real en tests, no mocks de DB |
+| Contenedores | Docker + docker-compose | — | entorno local reproducible |
 
 ### Lenguajes fuera del stack
 
-- **Python**: no. El ecosistema de IA es mejor, pero la IA se consume por HTTP como servicio
-  externo; no justifica un segundo lenguaje en el codebase.
+- **Node.js como backend**: no. El backend es Python (FastAPI), decisión del usuario (DD-04 revisada).
 - **PHP**: no, el mercado de developers ARG lo cubre igual, pero no aporta nada al problema.
 
 ## Arquitectura general
 
-Monorepo con 3 paquetes + 1 infra. Despliegue: **AWS o GCP, no on-prem** (DD-05).
+Monorepo con backend Python + frontend React/Vite + infra (docker-compose). Despliegue: **AWS o GCP,
+no on-prem** (DD-05). El contrato front↔back es el **OpenAPI** generado por FastAPI (Pydantic v2);
+el frontend usa tipos TypeScript derivados de ese schema.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
 │  CLIENTES                                                            │
 │  ┌────────────┐  ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │
-│  │ Next.js UI │  │ Next.js UI   │  │ Portal       │  │ WhatsApp   │ │
-│  │ interna    │  │ (kiosk)      │  │ paciente     │  │ webhook    │ │
+│  │ React/Vite │  │ React/Vite   │  │ Portal       │  │ WhatsApp   │ │
+│  │ UI interna │  │ (kiosk)      │  │ paciente     │  │ webhook    │ │
 │  └─────┬──────┘  └──────────────┘  └──────┬───────┘  └─────┬──────┘ │
 └────────┼───────────────────────────────────┼────────────────┼────────┘
          │                                   │                │
          └──────────────┬────────────────────┴────────────────┘
                         ▼
 ┌──────────────────────────────────────────────────────────────────────┐
-│  API — NestJS (stateless, N réplicas)                                │
-│  ┌──────────┐ ┌──────────┐ ┌──────────────┐ ┌────────────────────┐ │
-│  │ Guards   │ │ Guards   │ │ Pipes        │ │ Controllers        │ │
-│  │ JWT/ses. │ │ Tenant   │ │ Zod          │ │ (REST /api/v1)     │ │
-│  └──────────┘ └──────────┘ └──────────────┘ └────────────────────┘ │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │ Aplicación / dominio: Agenda, Clínica, Caja, Facturación     │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │ Infra: Prisma repos, Outbox publisher, Integraciones         │   │
-│  └──────────────────────────────────────────────────────────────┘   │
+│  API — FastAPI (stateless, N réplicas)                               │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────┐  ┌─────────────────┐  │
+│  │ Depend.  │  │ Depend.  │  │ Schemas      │  │ Routers         │  │
+│  │ JWT      │  │ Tenant   │  │ Pydantic     │  │ (REST /api/v1)  │  │
+│  └──────────┘  └──────────┘  └──────────────┘  └─────────────────┘  │
+│  ┌──────────────────────────────────────────────────────────────┐    │
+│  │ Aplicación / dominio: Agenda, Clínica, Caja, Facturación     │    │
+│  └──────────────────────────────────────────────────────────────┘    │
+│  ┌──────────────────────────────────────────────────────────────┐    │
+│  │ Infra: SQLAlchemy repos, Outbox publisher, Integraciones     │    │
+│  └──────────────────────────────────────────────────────────────┘    │
 └───────┬────────────────────┬─────────────────────┬──────────────────┘
         ▼                    ▼                     ▼
 ┌───────────────┐  ┌──────────────────┐  ┌───────────────────────────┐
-│ PostgreSQL 16 │  │ Redis + BullMQ   │  │ S3 (PDFs, copias, RX)    │
+│ PostgreSQL 16 │  │ Redis + Celery   │  │ S3 (PDFs, copias, RX)    │
 │ RLS por tenant│  │ jobs diferidos   │  │ lifecycle + versionado   │
 └───────────────┘  └──────────────────┘  └───────────────────────────┘
                               │

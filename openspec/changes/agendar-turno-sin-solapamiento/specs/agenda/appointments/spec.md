@@ -8,7 +8,7 @@ Define el contrato de la creación de turnos en la agenda del tenant por profesi
 
 ### Requirement: Crear turno reservando profesional y sillón
 
-El sistema MUST aceptar `POST /api/v1/appointments` y crear el turno reservando simultáneamente un `professional` y un `chair` (RN-AG-01). La operación MUST exigir sesión con membership activa y MUST derivar el `tenant_id` exclusivamente de la sesión/token, ignorando cualquier `tenant_id` recibido en el body (RN-TEN-03). El payload MUST validarse contra el schema Zod compartido frontend↔backend y el estado inicial del turno MUST ser `pendiente`.
+El sistema MUST aceptar `POST /api/v1/appointments` y crear el turno reservando simultáneamente un `professional` y un `chair` (RN-AG-01). La operación MUST exigir sesión con membership activa y MUST derivar el `tenant_id` exclusivamente de la sesión/token, ignorando cualquier `tenant_id` recibido en el body (RN-TEN-03). El payload MUST validarse contra el schema Pydantic v2 del backend y el estado inicial del turno MUST ser `pendiente`.
 
 #### Scenario: Turno creado correctamente
 
@@ -17,7 +17,7 @@ El sistema MUST aceptar `POST /api/v1/appointments` y crear el turno reservando 
 
 #### Scenario: Payload inválido
 
-- **WHEN** el payload no cumple el schema Zod compartido (campo faltante, UUID mal formado, `fin <= inicio`)
+- **WHEN** el payload no cumple el schema Pydantic (campo faltante, UUID mal formado, `fin <= inicio`)
 - **THEN** la respuesta es `422` con el detalle de los campos inválidos y no se crea ningún turno
 
 #### Scenario: Operación sin sesión
