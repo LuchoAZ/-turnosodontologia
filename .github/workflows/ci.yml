@@ -1,0 +1,128 @@
+name: CI
+
+# Pipeline de C-01 (design D8): ruff → mypy → pytest → build (backend);
+# eslint → tsc → vitest → build (frontend); integration (Testcontainers) y
+# e2e (Playwright). El job `ci` agrega y es el único status check requerido.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: backend (ruff → mypy → pytest → build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Set up Python
+        run: uv python install 3.12
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync --locked
+      - name: Lint (ruff)
+        working-directory: backend
+        run: uv run ruff check .
+      - name: Typecheck (mypy)
+        working-directory: backend
+        run: uv run mypy app
+      - name: Unit tests (pytest)
+        working-directory: backend
+        run: uv run pytest
+      - name: Build
+        working-directory: backend
+        run: uv build
+
+  frontend:
+    name: frontend (eslint → tsc → vitest → build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint (eslint)
+        run: npm run lint
+      - name: Typecheck (tsc)
+        run: npm run typecheck
+      - name: Unit tests (vitest)
+        run: npm test
+      - name: Build
+        run: npm run build
+
+  integration:
+    name: integration (Testcontainers smoke)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Set up Python
+        run: uv python install 3.12
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync --locked
+      - name: Integration tests (Postgres 16 + Redis 7)
+        working-directory: backend
+        run: uv run pytest -m integration
+
+  e2e:
+    name: e2e (Playwright smoke)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: E2E smoke (Playwright)
+        run: npm run test:e2e
+
+  # Gate único: configurá este job (`ci`) como required status check en la
+  # branch protection de `main` para que el merge quede bloqueado si algo falla.
+  ci:
+    name: ci (required)
+    if: always()
+    needs: [backend, frontend, integration, e2e]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify every required job succeeded
+        run: |
+          results='${{ join(needs.*.result, ',') }}'
+          echo "job results: $results"
+          case "$results" in
+            *failure*|*cancelled*|*skipped*) echo "::error::one or more required jobs did not succeed"; exit 1 ;;
+          esac
+          echo "all required jobs succeeded"

@@ -1,0 +1,97 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: odontologia-postgres
+    environment:
+      POSTGRES_USER: odontologia
+      POSTGRES_PASSWORD: odontologia
+      POSTGRES_DB: odontologia
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odontologia -d odontologia"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: odontologia-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: odontologia-backend
+    env_file:
+      - ./.env
+    environment:
+      # Inside the compose network the stores are reachable by service name,
+      # not localhost (the .env values target host-side runs).
+      DATABASE_URL: postgresql://odontologia:odontologia@postgres:5432/odontologia
+      DIRECT_URL: postgresql://odontologia:odontologia@postgres:5432/odontologia
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: odontologia-worker
+    command: celery -A app.workers worker --loglevel=info
+    env_file:
+      - ./.env
+    environment:
+      DATABASE_URL: postgresql://odontologia:odontologia@postgres:5432/odontologia
+      DIRECT_URL: postgresql://odontologia:odontologia@postgres:5432/odontologia
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: odontologia-frontend
+    env_file:
+      - ./.env
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
