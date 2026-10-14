@@ -43,13 +43,13 @@
 
 ## 6. Pipeline de CI
 
-- [ ] 6.1 Crear los jobs `backend` (`ruff → mypy → pytest → build`) y `frontend` (`eslint → tsc → vitest → build`) en GitHub Actions con caché de `uv`/pip y de npm; verificar que el pipeline corre en verde en un PR de prueba.
-- [ ] 6.2 Agregar los jobs `integration` (smoke con Testcontainers) y `e2e` (Playwright smoke); verificar que ambos quedan en verde en CI.
+- [x] 6.1 Crear los jobs `backend` (`ruff → mypy → pytest → build`) y `frontend` (`eslint → tsc → vitest → build`) en GitHub Actions con caché de `uv`/pip y de npm; verificar que el pipeline corre en verde en un PR de prueba.
+- [x] 6.2 Agregar los jobs `integration` (smoke con Testcontainers) y `e2e` (Playwright smoke); verificar que ambos quedan en verde en CI.
 - [ ] 6.3 Marcar los jobs como bloqueantes de merge; verificar que un lint/typecheck/test roto hace fallar el pipeline.
 
 ## 7. Verificación de integración
 
-- [ ] 7.1 Verificar el pipeline completo `ruff → mypy / tsc → unit → integration → e2e → build` en verde sobre el PR del change.
+- [x] 7.1 Verificar el pipeline completo `ruff → mypy / tsc → unit → integration → e2e → build` en verde sobre el PR del change.
 - [x] 7.2 Verificar reproducibilidad desde cero: clonar limpio, `uv sync` (o `pip install -e ".[dev]"`) en `backend/` + `npm install` en `frontend/`, `docker compose up -d`, build y tests completan sin pasos manuales ocultos.
 - [x] 7.3 Verificar que el árbol de dependencias queda desbloqueado: `GET /health` y `GET /ready` responden, la migración baseline aplica y el harness de tests está operativo para C-02.
 
