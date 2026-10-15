@@ -37,9 +37,10 @@ informado, historia clínica inmutable, RBAC/privacidad y migración con dedupe.
 | Discovery de mercado (20 competidores) | ✅ Completado (`discovery/discovery.md`) |
 | Knowledge Base (13 documentos de dominio) | ✅ Completado (`knowledge-base/`) |
 | Roadmap — 23 changes, Sprint 1 dev | ✅ Completado (`CHANGES.md`) |
-| Skills del stack (21) y convenciones de agentes | ✅ Completado (`AGENTS.md`, `.atl/`) |
-| Changes propuestos y validados | ✅ `c-01-foundation-setup` · `agendar-turno-sin-solapamiento` |
-| **Código fuente (implementación)** | 🔜 **Sprint en curso — deadline 2026-10-23** |
+| Skills del stack (22) y convenciones de agentes | ✅ Completado — vendorizadas en `.agents/skills/` (`AGENTS.md`, `.atl/skill-registry.md`) |
+| CI (GitHub Actions): lint → typecheck → unit → integration → e2e → build | ✅ Verde en `main` (5/5 jobs) |
+| Change `c-01-foundation-setup` (monorepo, tests con Postgres/Redis reales, CI) | ✅ Implementado — 31/32 tasks (falta cerrar branch protection en GitHub) |
+| **Change `agendar-turno-sin-solapamiento` (ENTREGABLE TP)** | 🔜 **Pendiente — deadline 2026-10-23** |
 
 **Entregable del TP (META)**: el change `agendar-turno-sin-solapamiento` — crear un turno evitando
 solapamientos por profesional y por sillón/box, con reglas de negocio verificables (RN-AG-01/02/03/09/10),
@@ -48,7 +49,7 @@ API + formulario mínimo y evidencia de tests de punta a punta.
 ### Ruta del Sprint 1 dev
 
 ```
-C-01 foundation-setup              monorepo + tests con Postgres/Redis reales + CI
+C-01 foundation-setup  ✅           monorepo + tests con Postgres/Redis reales + CI
   → C-02 core-models-tenancy       modelos SQLAlchemy + RLS + EXCLUDE (anti-solapamiento)
   → C-03 auth-sessions             sesión httpOnly + tenant del token
   → C-05 clinic-setup              profesionales, sillones y reglas de duración
@@ -96,10 +97,15 @@ TypeScript). **Vertical slices** (cada change entrega API + UI de su capacidad),
 │   │   ├── c-01-foundation-setup/
 │   │   └── agendar-turno-sin-solapamiento/
 │   └── specs/                   # Specs de capacidades (tras archive)
-├── backend/                     # (objetivo C-01) FastAPI: app/, alembic/, tests/
-├── frontend/                    # (objetivo C-01) React + Vite: src/{routes,features,shared,api}
-├── docker-compose.yml           # (objetivo C-01) Postgres 16 + Redis 7 + backend + worker + frontend
-└── .env.example                 # (objetivo C-01) variables validadas con pydantic-settings
+├── .agents/skills/              # Skills vendorizadas (metodología + dominio, 16 skills)
+├── .atl/                        # Skill registry (.atl/skill-registry.md)
+├── .opencode/skills/            # Skills OPSX (openspec-*)
+├── .github/workflows/           # CI (GitHub Actions)
+├── docs/                        # Documentación adicional (guía del proyecto, guia-del-proyecto.doc)
+├── backend/                     # FastAPI: app/, alembic/, tests/
+├── frontend/                    # React + Vite: src/{routes,features,shared,api}
+├── docker-compose.yml           # Postgres 16 + Redis 7 + backend + worker + frontend
+└── .env.example                 # Variables validadas con pydantic-settings
 ```
 
 ## 5. Modo de uso
@@ -119,7 +125,7 @@ knowledge-base/README.md            # índice de la KB
 CHANGES.md                          # roadmap y dependencias
 ```
 
-### 5.2 Entorno de desarrollo (previsto — se activa con la implementación de C-01)
+### 5.2 Entorno de desarrollo (implementado con C-01)
 
 Requisitos: **Python 3.12**, **Node.js 20+**, **Docker Desktop** (para levantar PostgreSQL 16 y Redis 7 reales).
 
@@ -185,6 +191,8 @@ Extraídas de `AGENTS.md` — las lee todo agente antes de tocar código:
 | `knowledge-base/11_facturacion_arca.md` | ARCA: WSAA, X.509 por tenant, idempotencia |
 | `knowledge-base/12_historia_clinical_y_compliance.md` | Ley 26.529, Ley 25.326 + AAIP |
 | `CHANGES.md` | Roadmap completo y dependencias |
+| `.atl/skill-registry.md` | Registro de skills (metodología + dominio, vendorizadas en `.agents/skills/`) |
+| `docs/guia-del-proyecto.doc` | Guía exhaustiva carpeta por carpeta (para video/defensa) |
 | `discovery/discovery.md` | Recomendación final (Sección D del TP): 5 competidores para demo, 3 referencias UX, MVP sugerido |
 
 ## 8. Licencia y contexto académico
