@@ -241,11 +241,16 @@
   "skills": {
     "created_by": "skill-registry",
     "registry": ".atl/skill-registry.md",
-    "count": 21,
+    "count": 22,
     "locations": {
-      "foundation": "C:\\Users\\L\\.config\\opencode\\skills",
-      "domain": "C:\\Users\\L\\.agents\\skills",
-      "project": "C:\\Users\\L\\Desktop\\Tpi Metodologia\\.opencode\\skills"
-    }
+      "methodology": ".agents/skills",
+      "domain": ".agents/skills",
+      "project": ".opencode/skills"
+    },
+    "upstream": {
+      "methodology": "C:\\Users\\L\\.config\\opencode\\skills",
+      "domain": "C:\\Users\\L\\.agents\\skills"
+    },
+    "vendored": true
   }
 }

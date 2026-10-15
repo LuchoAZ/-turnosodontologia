@@ -57,7 +57,7 @@ La fuente de verdad del dominio vive en `knowledge-base/`. **Leé el archivo rel
 
 ## Skills Disponibles
 
-Fuente de verdad: `.atl/skill-registry.md` (generado por `skill-registry`).
+Fuente de verdad: `.atl/skill-registry.md` (**versionado** en el repo; generado por `skill-registry`). Las skills resueltas para este proyecto están **vendorizadas en `.agents/skills/`** (project-local): viajan con el repo. Las copias globales (`~/.config/opencode/skills/`, `~/.agents/skills/`) quedan como origen upstream.
 
 | Agente | Rol | Skills que carga |
 |--------|-----|------------------|
@@ -68,7 +68,7 @@ Fuente de verdad: `.atl/skill-registry.md` (generado por `skill-registry`).
 
 Cargá la skill correspondiente al contexto ANTES de escribir código.
 
-> Los compact rules de cada skill los resuelve el orquestador desde `.atl/skill-registry.md` (generado por `skill-registry`; no versionado — no está en el repo). Esta tabla solo mapea skill→rol.
+> Los compact rules de cada skill los resuelve el orquestador desde `.atl/skill-registry.md` (versionado en el repo). Las skills viven en `.agents/skills/` (project-local). Esta tabla solo mapea skill→rol.
 
 ---
 

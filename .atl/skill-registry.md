@@ -9,30 +9,35 @@
 
 ---
 
-## User Skills
+## Methodology Skills (project-local, `.agents/skills/`)
+
+Vendored into the repo so the project is self-contained. The upstream copies still live under `~/.config/opencode/skills/`; these are the ones this project resolves.
 
 | Trigger | Skill | Path |
 |---------|-------|------|
-| `/active-orchestrator:init\|kb\|rules\|discovery\|openspec\|devops\|find-skill\|registry` — or starting a new project from scratch via the SDD/OpenSpec foundation flow | active-orchestrator | C:\Users\L\.config\opencode\skills\active-orchestrator\SKILL.md |
-| Create/generate/update `AGENTS.md`/`CLAUDE.md`, "armar las reglas del proyecto", "instrucciones para los agentes", "generar claude.md"; or after kb-creator + roadmap-generator | agents-md-generator (agent-instruction) | C:\Users\L\.config\opencode\skills\agent-instruction\SKILL.md |
-| Research the market / think what to build before clarity; dispatched as the pre-KB discovery phase | discovery-research | C:\Users\L\.config\opencode\skills\discovery-research\SKILL.md |
-| "how do I do X", "find a skill for X", "is there a skill that can...", or extending agent capabilities | find-skills | C:\Users\L\.config\opencode\skills\find-skill\SKILL.md |
-| Create/build/generate a knowledge base, document a project from source docs, "armar base de conocimiento", "crear KB", "documentar proyecto" | kb-creator | C:\Users\L\.config\opencode\skills\kb-creator\SKILL.md |
-| Create/build/regenerate/update `CHANGES.md`, roadmap, change map, implementation plan; "armar CHANGES", "crear mapa de changes" | roadmap-generator | C:\Users\L\.config\opencode\skills\roadmap-generator\SKILL.md |
-| Create/modify/improve a skill, run evals, benchmark, or optimize a skill description for triggering | skill-creator | C:\Users\L\.config\opencode\skills\skill-creator\SKILL.md |
-| Research/scrape a competitor from a URL, or `discovery-research` invokes it during Discovery | web-scraper | C:\Users\L\.config\opencode\skills\web-scraper\SKILL.md |
+| `/active-orchestrator:init\|kb\|rules\|discovery\|openspec\|devops\|find-skill\|registry` — or starting a new project from scratch via the SDD/OpenSpec foundation flow | active-orchestrator | .agents/skills/active-orchestrator/SKILL.md |
+| Create/generate/update `AGENTS.md`/`CLAUDE.md`, "armar las reglas del proyecto", "instrucciones para los agentes", "generar claude.md"; or after kb-creator + roadmap-generator | agents-md-generator (agent-instruction) | .agents/skills/agent-instruction/SKILL.md |
+| Research the market / think what to build before clarity; dispatched as the pre-KB discovery phase | discovery-research | .agents/skills/discovery-research/SKILL.md |
+| "how do I do X", "find a skill for X", "is there a skill that can...", or extending agent capabilities | find-skills | .agents/skills/find-skill/SKILL.md |
+| Create/build/generate a knowledge base, document a project from source docs, "armar base de conocimiento", "crear KB", "documentar proyecto" | kb-creator | .agents/skills/kb-creator/SKILL.md |
+| Create/build/regenerate/update `CHANGES.md`, roadmap, change map, implementation plan; "armar CHANGES", "crear mapa de changes" | roadmap-generator | .agents/skills/roadmap-generator/SKILL.md |
+| Create/modify/improve a skill, run evals, benchmark, or optimize a skill description for triggering | skill-creator | .agents/skills/skill-creator/SKILL.md |
+| Build or update the project skill registry (`.atl/skill-registry.md`) | skill-registry | .agents/skills/skill-registry/SKILL.md |
+| Research/scrape a competitor from a URL, or `discovery-research` invokes it during Discovery | web-scraper | .agents/skills/web-scraper/SKILL.md |
 
-### Domain Skills (user-level, `~/.agents/skills`)
+### Domain Skills (project-local, `.agents/skills/`)
+
+Vendored from `~/.agents/skills/` into the repo.
 
 | Trigger | Skill | Path |
 |---------|-------|------|
-| Writing, reviewing, or refactoring NestJS code (legacy — stack anterior; el backend actual es FastAPI/Python) | nestjs-best-practices | C:\Users\L\.agents\skills\nestjs-best-practices\SKILL.md |
-| Automate browser interactions, test web pages, work with Playwright tests | playwright-cli | C:\Users\L\.agents\skills\playwright-cli\SKILL.md |
-| Writing DB queries, CRUD, filtering, or configuring Prisma Client (legacy — stack anterior; el ORM actual es SQLAlchemy 2.0 + Alembic) | prisma-client-api | C:\Users\L\.agents\skills\prisma-client-api\SKILL.md |
-| Working with shadcn/ui, component registries, presets, `components.json`; "shadcn init"; design system from DESIGN.md | shadcn | C:\Users\L\.agents\skills\shadcn\SKILL.md |
-| BEFORE writing/changing anything in a Postgres DB — schema, migration, RLS, index, query; diagnosing slow queries/locks/RLS leaks | supabase-postgres-best-practices | C:\Users\L\.agents\skills\supabase-postgres-best-practices\SKILL.md |
-| Build features or fix bugs test-first, "red-green-refactor", or want integration tests | tdd | C:\Users\L\.agents\skills\tdd\SKILL.md |
-| Writing/reviewing/refactoring React code (vigente; aplica a React 18 + Vite); performance, data fetching, bundle optimization | vercel-react-best-practices | C:\Users\L\.agents\skills\vercel-react-best-practices\SKILL.md |
+| Writing, reviewing, or refactoring NestJS code (legacy — stack anterior; el backend actual es FastAPI/Python) | nestjs-best-practices | .agents/skills/nestjs-best-practices/SKILL.md |
+| Automate browser interactions, test web pages, work with Playwright tests | playwright-cli | .agents/skills/playwright-cli/SKILL.md |
+| Writing DB queries, CRUD, filtering, or configuring Prisma Client (legacy — stack anterior; el ORM actual es SQLAlchemy 2.0 + Alembic) | prisma-client-api | .agents/skills/prisma-client-api/SKILL.md |
+| Working with shadcn/ui, component registries, presets, `components.json`; "shadcn init"; design system from DESIGN.md | shadcn | .agents/skills/shadcn/SKILL.md |
+| BEFORE writing/changing anything in a Postgres DB — schema, migration, RLS, index, query; diagnosing slow queries/locks/RLS leaks | supabase-postgres-best-practices | .agents/skills/supabase-postgres-best-practices/SKILL.md |
+| Build features or fix bugs test-first, "red-green-refactor", or want integration tests | tdd | .agents/skills/tdd/SKILL.md |
+| Writing/reviewing/refactoring React code (vigente; aplica a React 18 + Vite); performance, data fetching, bundle optimization | vercel-react-best-practices | .agents/skills/vercel-react-best-practices/SKILL.md |
 
 ### Project Skills (OPSX/OpenSpec — deduplicated)
 
@@ -40,12 +45,12 @@ Identical copies exist under `.opencode/skills/` and `.claude/skills/`. Deduplic
 
 | Trigger | Skill | Path |
 |---------|-------|------|
-| Start/continue implementing tasks from an OpenSpec change; "openspec apply", "opsx apply", "openspec implement" | openspec-apply-change | C:\Users\L\Desktop\Tpi Metodologia\.opencode\skills\openspec-apply-change\SKILL.md |
-| Finalize and archive a completed change; "openspec archive", "opsx archive" | openspec-archive-change | C:\Users\L\Desktop\Tpi Metodologia\.opencode\skills\openspec-archive-change\SKILL.md |
-| Think through something before/during a change; "openspec explore", "opsx explore" | openspec-explore | C:\Users\L\Desktop\Tpi Metodologia\.opencode\skills\openspec-explore\SKILL.md |
-| Quickly describe what to build and get a complete proposal (design, specs, tasks); "openspec propose", "opsx propose" | openspec-propose | C:\Users\L\Desktop\Tpi Metodologia\.opencode\skills\openspec-propose\SKILL.md |
-| Update main specs from a delta spec without archiving; "openspec sync", "opsx sync" | openspec-sync-specs | C:\Users\L\Desktop\Tpi Metodologia\.opencode\skills\openspec-sync-specs\SKILL.md |
-| Revise a change's existing planning artifacts and keep them coherent; "openspec update change", "opsx update" | openspec-update-change | C:\Users\L\Desktop\Tpi Metodologia\.opencode\skills\openspec-update-change\SKILL.md |
+| Start/continue implementing tasks from an OpenSpec change; "openspec apply", "opsx apply", "openspec implement" | openspec-apply-change | .opencode/skills/openspec-apply-change/SKILL.md |
+| Finalize and archive a completed change; "openspec archive", "opsx archive" | openspec-archive-change | .opencode/skills/openspec-archive-change/SKILL.md |
+| Think through something before/during a change; "openspec explore", "opsx explore" | openspec-explore | .opencode/skills/openspec-explore/SKILL.md |
+| Quickly describe what to build and get a complete proposal (design, specs, tasks); "openspec propose", "opsx propose" | openspec-propose | .opencode/skills/openspec-propose/SKILL.md |
+| Update main specs from a delta spec without archiving; "openspec sync", "opsx sync" | openspec-sync-specs | .opencode/skills/openspec-sync-specs/SKILL.md |
+| Revise a change's existing planning artifacts and keep them coherent; "openspec update change", "opsx update" | openspec-update-change | .opencode/skills/openspec-update-change/SKILL.md |
 
 ---
 
