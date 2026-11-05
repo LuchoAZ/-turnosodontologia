@@ -1,0 +1,150 @@
+==============================================================================
+TPI - METODOLOGÍA DE LA INVESTIGACIÓN I
+Gestión Odontológica PyME (odontologia-saas)
+Entrega: 2026-11-20 | Integrantes: 1
+==============================================================================
+
+1. QUÉ SE ENTREGA
+------------------------------------------------------------------------------
+Sistema SaaS multi-tenant para clínicas odontológicas PyME de Argentina, con
+dos changes completos, verificados y archivados:
+
+  [1] c-01-foundation-setup        -> archivado 2026-11-05 (32/32 tasks)
+      Monorepo backend/frontend, tooling, tests con Postgres y Redis reales,
+      CI en GitHub Actions.
+
+  [2] c-02-core-models-tenancy     -> archivado 2026-11-05 (22/22 tasks)
+      Seis tablas base (tenant, user, membership, specialty, price_concept,
+      currency), Row Level Security fail-closed, rol de aplicación sin
+      BYPASSRLS, seed de catálogos y gate de aislamiento cross-tenant.
+
+Specs principales:
+  - openspec/specs/platform-runtime/spec.md   (5 requisitos)
+  - openspec/specs/platform-tenancy/spec.md   (7 requisitos, 25 escenarios)
+
+Changes archivados:
+  - openspec/changes/archive/2026-11-05-c-01-foundation-setup/
+  - openspec/changes/archive/2026-11-05-c-02-core-models-tenancy/
+
+2. SKILL PROPIA
+------------------------------------------------------------------------------
+Nombre: spec-scenario-review
+Ubicación: .agents/skills/spec-scenario-review/SKILL.md (versionada)
+Registro: .atl/skill-registry.md (sección Own Skills)
+Referencia: AGENTS.md y CLAUDE.md (idénticos, SHA256 verificado)
+
+Qué hace:
+  Revisa proposal.md, design.md, specs/**/spec.md y tasks.md de un change
+  ANTES de implementarlo. Exige al menos 3 escenarios verificables por
+  requisito (funcionamiento esperado, error de negocio, caso borde), cruza las
+  reglas RN-XX contra la knowledge base, verifica el aislamiento cross-tenant
+  (RN-TEN-02) y emite un veredicto:
+    LISTO PARA APLICAR / FALTAN ESCENARIOS / BLOQUEADO.
+
+Evidencia de aplicación real:
+  - docs/skills-mcp/evidencias/revision-agendar-turno.md
+    Change: agendar-turno-sin-solapamiento
+    Veredicto: FALTAN ESCENARIOS
+    Resultado: 6 huecos detectados antes de escribir código (recurso inactivo,
+    turno contiguo, tipo de práctica inválido, fecha sin offset, cruce de
+    medianoche, tenant_id en el body). La revisión de tenancy dio completa.
+
+  - docs/skills-mcp/evidencias/revision-c-02.md
+    Change: c-02-core-models-tenancy
+    Veredicto: LISTO PARA APLICAR
+    Resultado: detectó y cerró el hueco RN-TEN-04 (a lo sumo un owner activo
+    por tenant), con requisito, 3 escenarios, índice único parcial
+    uq_membership_owner_activo y RED verificado.
+
+3. MCP
+------------------------------------------------------------------------------
+Servidor elegido: context7 (remoto, https://mcp.context7.com/mcp)
+Tipo: remote | enabled: true | sin credenciales obligatorias
+Configuración: sección mcp.context7 de ~/.config/opencode/opencode.json
+  (reproducida sin secretos en README.md, sección 5.4)
+
+Por qué context7 y no Playwright MCP:
+  C-02 se define por SQL de PostgreSQL (RLS, políticas, set_config) y por el
+  manejo de la sesión en SQLAlchemy. context7 aporta documentación oficial
+  directa a ese trabajo; Playwright MCP recién se vuelve útil con la UI de
+  agenda (C-07) y agrega herramientas que hoy no se usan.
+
+Uso real:
+  - resolve-library-id("PostgreSQL", "RLS multi-tenant") -> /websites/postgresql
+  - resolve-library-id("SQLAlchemy", "SET LOCAL RLS")   -> /sqlalchemy/sqlalchemy
+  - query-docs: CREATE POLICY / ENABLE ROW LEVEL SECURITY
+  - query-docs: SET LOCAL vs set_config por transacción
+  - query-docs: EXCLUDE USING gist (preparación de C-06)
+
+Corrección concreta:
+  Antes: SET LOCAL app.current_tenant = :tenant_id
+         (SET no acepta parámetros bindeados; interpolar el UUID es riesgoso)
+  Después: SELECT set_config('app.current_tenant', :tenant_id, true)
+           (parameterizado y transaction-local)
+  Archivo: backend/app/db/tenant_context.py
+  Test: test_el_contexto_de_tenant_no_se_filtra_entre_transacciones_del_pool
+
+4. AISLAMIENTO MULTI-TENANT (GATE RN-TEN-02)
+------------------------------------------------------------------------------
+- membership y price_concept tienen RLS habilitada y FORZADA (FORCE ROW LEVEL
+  SECURITY).
+- Políticas basadas en NULLIF(current_setting('app.current_tenant', true), '')
+  ::uuid. El NULLIF evita el cast de cadena vacía tras un commit y mantiene el
+  comportamiento fail-closed.
+- Rol odontologia_app: NOLOGIN NOSUPERUSER NOBYPASSRLS.
+- Los tests hacen SET ROLE odontologia_app antes de consultar: un superusuario
+  ignora RLS y, sin ese SET ROLE, el verde sería falso.
+- Prueba de mutación: el mismo SELECT como owner ve filas de A y de B; como rol
+  de app ve solo A. Demuestra que el filtro lo hace la política, no un WHERE
+  accidental.
+- Test de reversibilidad: upgrade head -> downgrade base -> upgrade head.
+
+5. CÓMO REPRODUCIR
+------------------------------------------------------------------------------
+Requisitos: Python 3.12, uv, Docker Desktop, Node.js (frontend), OpenSpec.
+
+  cd backend
+  uv sync
+  uv run ruff check .        -> All checks passed!
+  uv run mypy app            -> Success: no issues found in 22 source files
+  uv run pytest              -> 56 passed (17 de integración)
+
+  cd ..
+  openspec validate --archived --strict   -> 2 changes válidos
+  openspec validate --specs --strict      -> 2 specs válidas
+
+  Guion del video: docs/entrega/guion-video.md
+
+6. DOCUMENTACIÓN
+------------------------------------------------------------------------------
+  docs/foundation.md
+    C-01: cómo correr, sondas de salud, variables de entorno, CI.
+  docs/core-tenancy.md
+    C-02: modelo, RLS, rol, contexto, seed, prueba de mutación y comandos.
+  docs/skills-mcp/investigacion.md
+    Ficha de investigación: necesidad, skill-creator, comparación context7 vs
+    Playwright MCP, configuración y fuentes.
+  docs/skills-mcp/aplicacion.md
+    Informe de aplicación, evidencias y revisión crítica.
+  docs/skills-mcp/evidencias/revision-agendar-turno.md
+  docs/skills-mcp/evidencias/revision-c-02.md
+
+7. ESTADO Y PENDIENTES
+------------------------------------------------------------------------------
+Cumplido:
+  - 2 changes archivados (mínimo del TPI).
+  - Skill propia creada, registrada y aplicada con evidencia.
+  - MCP configurado y aplicado con una corrección técnica verificable.
+  - 56 tests en verde; ruff y mypy en cero.
+
+Pendiente (fuera del mínimo de esta entrega):
+  - Actualizar agendar-turno-sin-solapamiento con los 6 escenarios detectados
+    y volver a pasar spec-scenario-review hasta LISTO PARA APLICAR.
+  - Implementar el entregable de agenda: C-03 -> C-05 -> C-06 -> C-07.
+
+8. NOTA SOBRE DATOS Y SECRETOS
+------------------------------------------------------------------------------
+Todos los datos son ficticios. No se versionan claves, certificados, tokens ni
+el archivo .env. La API key de context7 es opcional y, si se usa, se referencia
+como variable de entorno; nunca se commitea su valor.
+==============================================================================

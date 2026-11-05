@@ -81,6 +81,41 @@ anónimo para `node_modules`.
 > + `uv run pytest` / `npm test`. Sin el `.env` el compose falla con
 > `env file ... not found`; ese es el único paso previo y queda documentado acá.
 
+## CI y branch protection
+
+El workflow `.github/workflows/ci.yml` corre cuatro jobs (`backend`, `frontend`, `integration`,
+`e2e`) y un job agregador `ci (required)` que **falla si cualquiera de los anteriores falla,
+se cancela o se saltea**. Ese job es el único status check que hay que exigir en la rama
+`main`; no hace falta exigir los cuatro por separado.
+
+Verificación del comportamiento (2026-11-05): con un archivo con un import sin usar en
+`backend/app/`, `uv run ruff check .` termina con código `1` y el job `backend` falla; al
+eliminarlo, vuelve a `0`. Lo mismo aplica a `mypy`, `pytest`, `eslint`, `tsc` y `vitest`,
+que son pasos sin `continue-on-error`.
+
+**Acción de administración del repositorio (una sola vez, requiere permisos de admin):**
+
+1. GitHub → **Settings → Branches → Add branch protection rule**.
+2. Branch name pattern: `main`.
+3. Tildar **Require a pull request before merging** y **Require status checks to pass before merging**.
+4. Buscar y seleccionar el check **`ci (required)`**; tildar **Require branches to be up to date**.
+5. Guardar.
+
+Equivalente con GitHub CLI (si `gh` está instalado y autenticado):
+
+```powershell
+gh api -X PUT "repos/{owner}/{repo}/branches/main/protection" `
+  -f "required_status_checks[strict]=true" `
+  -f "required_status_checks[contexts][]=ci (required)" `
+  -F "enforce_admins=false" `
+  -F "required_pull_request_reviews=null" `
+  -F "restrictions=null"
+```
+
+> **Estado**: la protección de rama es una configuración del repositorio remoto, no un archivo
+> del repo; por eso no se puede versionar. El gate `ci (required)` sí está versionado y
+> verificado localmente. La marcación en GitHub queda como paso manual documentado acá.
+
 ## Sondas de salud
 
 El backend expone dos endpoints operativos (sin datos de negocio):

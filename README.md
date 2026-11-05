@@ -37,9 +37,11 @@ informado, historia clínica inmutable, RBAC/privacidad y migración con dedupe.
 | Discovery de mercado (20 competidores) | ✅ Completado (`discovery/discovery.md`) |
 | Knowledge Base (13 documentos de dominio) | ✅ Completado (`knowledge-base/`) |
 | Roadmap — 23 changes, Sprint 1 dev | ✅ Completado (`CHANGES.md`) |
-| Skills del stack (22) y convenciones de agentes | ✅ Completado — vendorizadas en `.agents/skills/` (`AGENTS.md`, `.atl/skill-registry.md`) |
-| CI (GitHub Actions): lint → typecheck → unit → integration → e2e → build | ✅ Verde en `main` (5/5 jobs) |
-| Change `c-01-foundation-setup` (monorepo, tests con Postgres/Redis reales, CI) | ✅ Implementado — 31/32 tasks (falta cerrar branch protection en GitHub) |
+| Skills del stack (17 project-local) + convenciones de agentes | ✅ Completado — vendorizadas en `.agents/skills/` (`AGENTS.md`, `.atl/skill-registry.md`); las 6 skills OPSX viven en `.opencode/skills/` |
+| CI (GitHub Actions): lint → typecheck → unit → integration → e2e → build | ✅ Verde en `main` (5/5 jobs); gate `ci (required)` versionado (marcación en GitHub documentada en `docs/foundation.md`) |
+| Change `c-01-foundation-setup` (monorepo, tests con Postgres/Redis reales, CI) | ✅ **Archivado** — 32/32 tasks |
+| Change `c-02-core-models-tenancy` (modelo base, RLS fail-closed, seed de catálogos) | ✅ **Archivado** — 22/22 tasks, gate RN-TEN-02 con prueba de mutación (`docs/core-tenancy.md`) |
+| Skill propia `spec-scenario-review` + MCP `context7` | ✅ Integrados con evidencia (`docs/skills-mcp/`) |
 | **Change `agendar-turno-sin-solapamiento` (ENTREGABLE TP)** | 🔜 **Pendiente — deadline 2026-10-23** |
 
 **Entregable del TP (META)**: el change `agendar-turno-sin-solapamiento` — crear un turno evitando
@@ -49,8 +51,8 @@ API + formulario mínimo y evidencia de tests de punta a punta.
 ### Ruta del Sprint 1 dev
 
 ```
-C-01 foundation-setup  ✅           monorepo + tests con Postgres/Redis reales + CI
-  → C-02 core-models-tenancy       modelos SQLAlchemy + RLS + EXCLUDE (anti-solapamiento)
+C-01 foundation-setup  ✅ archivado   monorepo + tests con Postgres/Redis reales + CI
+  → C-02 core-models-tenancy  ✅ archivado   modelos SQLAlchemy + RLS fail-closed + seed
   → C-03 auth-sessions             sesión httpOnly + tenant del token
   → C-05 clinic-setup              profesionales, sillones y reglas de duración
   → C-06 patients                  pacientes
@@ -97,11 +99,11 @@ TypeScript). **Vertical slices** (cada change entrega API + UI de su capacidad),
 │   │   ├── c-01-foundation-setup/
 │   │   └── agendar-turno-sin-solapamiento/
 │   └── specs/                   # Specs de capacidades (tras archive)
-├── .agents/skills/              # Skills vendorizadas (metodología + dominio, 16 skills)
+├── .agents/skills/              # Skills vendorizadas (metodología + dominio + `spec-scenario-review`)
 ├── .atl/                        # Skill registry (.atl/skill-registry.md)
 ├── .opencode/skills/            # Skills OPSX (openspec-*)
 ├── .github/workflows/           # CI (GitHub Actions)
-├── docs/                        # Documentación adicional (guía del proyecto, guia-del-proyecto.doc)
+├── docs/                        # foundation.md, core-tenancy.md, skills-mcp/, entrega/
 ├── backend/                     # FastAPI: app/, alembic/, tests/
 ├── frontend/                    # React + Vite: src/{routes,features,shared,api}
 ├── docker-compose.yml           # Postgres 16 + Redis 7 + backend + worker + frontend
@@ -165,6 +167,45 @@ npm run test:e2e           # e2e (Playwright) del formulario web
 bloquean el merge. **Gate de merge obligatorio**: todo change que toque una tabla con `tenant_id` debe
 pasar el test de aislamiento cross-tenant (RN-TEN-02).
 
+### 5.4 Skill propia y MCP (context7)
+
+**Skill propia `spec-scenario-review`** (`.agents/skills/spec-scenario-review/SKILL.md`, versionada):
+revisa `proposal.md`, `design.md`, `specs/**/spec.md` y `tasks.md` de un change **antes** de
+implementarlo. Exige ≥3 escenarios verificables por requisito (esperado, error de negocio, borde),
+cruza las reglas RN-XX contra la KB y bloquea si falta el check de tenancy (RN-TEN-02). Emite un
+veredicto: `LISTO PARA APLICAR` / `FALTAN ESCENARIOS` / `BLOQUEADO`.
+
+Evidencia de uso real:
+
+- `docs/skills-mcp/evidencias/revision-agendar-turno.md` → `FALTAN ESCENARIOS`, 6 huecos detectados
+  antes de escribir código.
+- `docs/skills-mcp/evidencias/revision-c-02.md` → `LISTO PARA APLICAR`, con el hueco **RN-TEN-04**
+  detectado por la skill y cerrado en C-02 (índice parcial + RED verificado).
+- `docs/skills-mcp/aplicacion.md` → informe de aplicación completo y revisión crítica.
+
+**MCP `context7`** (documentación actualizada del stack). Configuración reproducible, en la
+configuración **global** de OpenCode (`~/.config/opencode/opencode.json`):
+
+```json
+{
+  "mcp": {
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "enabled": true
+    }
+  }
+}
+```
+
+- **Requisitos**: ninguno (servidor remoto). Opcional: `CONTEXT7_API_KEY` gratuita para más rate
+  limit; se referencia como `{env:CONTEXT7_API_KEY}` y **nunca** se commitea el valor.
+- **Comprobar conexión**: `opencode mcp list` y, en una sesión, pedir `use context7`; deben aparecer
+  `context7_resolve-library-id` y `context7_query-docs`. Si el CLI no está en el PATH, alcanza con
+  verificar que `mcp.context7.enabled = true` en el JSON y que la sesión liste esas dos tools.
+- **Uso**: `resolve-library-id` (nombre → ID) y `query-docs` (docs por ID). La ficha completa, la
+  comparación con Playwright MCP y las consultas hechas están en `docs/skills-mcp/investigacion.md`.
+
 ## 6. Reglas de implementación (resumen)
 
 Extraídas de `AGENTS.md` — las lee todo agente antes de tocar código:
@@ -192,7 +233,14 @@ Extraídas de `AGENTS.md` — las lee todo agente antes de tocar código:
 | `knowledge-base/12_historia_clinical_y_compliance.md` | Ley 26.529, Ley 25.326 + AAIP |
 | `CHANGES.md` | Roadmap completo y dependencias |
 | `.atl/skill-registry.md` | Registro de skills (metodología + dominio, vendorizadas en `.agents/skills/`) |
-| `docs/guia-del-proyecto.doc` | Guía exhaustiva carpeta por carpeta (para video/defensa) |
+| `docs/foundation.md` | Cómo correr, sondas de salud, variables de entorno y CI/branch protection |
+| `docs/core-tenancy.md` | Modelo base, políticas RLS, rol de app, seed y prueba de mutación |
+| `docs/skills-mcp/investigacion.md` | Ficha de investigación: skill propia + comparación y elección de MCP |
+| `docs/skills-mcp/aplicacion.md` | Informe de aplicación, evidencias y revisión crítica |
+| `docs/skills-mcp/evidencias/revision-agendar-turno.md` | Revisión `FALTAN ESCENARIOS` del entregable (6 huecos) |
+| `docs/skills-mcp/evidencias/revision-c-02.md` | Revisión `LISTO PARA APLICAR` de C-02 (RN-TEN-04 cerrado) |
+| `docs/entrega/guion-video.md` | Guion del video de defensa (9–10 min, con comandos y tomas de respaldo) |
+| `docs/entrega/resumen-entrega.txt` | Resumen ejecutivo de la entrega y checklist de evidencias |
 | `discovery/discovery.md` | Recomendación final (Sección D del TP): 5 competidores para demo, 3 referencias UX, MVP sugerido |
 
 ## 8. Licencia y contexto académico
