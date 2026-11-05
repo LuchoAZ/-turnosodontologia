@@ -1,7 +1,9 @@
 """Alembic runtime environment.
 
-C-01 has no business models: the engine URL comes from the environment and the
-baseline migration is empty. C-02 will attach model metadata for autogenerate.
+La URL sale de ``sqlalchemy.url`` cuando el llamador la inyecta (tests con
+Testcontainers) y, si no, de ``DIRECT_URL``/``DATABASE_URL``. El metadata es el
+de los modelos SQLAlchemy de C-02, así ``alembic revision --autogenerate``
+detecta cambios futuros.
 """
 
 from __future__ import annotations
@@ -10,6 +12,8 @@ import os
 from logging.config import fileConfig
 
 from alembic import context
+from app.models import catalog, tenancy  # noqa: F401  (registra las tablas en Base.metadata)
+from app.models.base import Base
 from sqlalchemy import engine_from_config, pool
 
 config = context.config
@@ -17,19 +21,26 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# No model metadata yet (C-02 introduces it).
-target_metadata = None
+target_metadata = Base.metadata
 
 
-def _database_url() -> str:
-    url = os.environ.get("DIRECT_URL") or os.environ.get("DATABASE_URL")
-    if not url:
-        raise RuntimeError("DIRECT_URL or DATABASE_URL must be set to run migrations")
+def _normalize(url: str) -> str:
     if url.startswith("postgresql://"):
         return "postgresql+psycopg://" + url[len("postgresql://") :]
     if url.startswith("postgres://"):
         return "postgresql+psycopg://" + url[len("postgres://") :]
     return url
+
+
+def _database_url() -> str:
+    configured = config.get_main_option("sqlalchemy.url")
+    if configured:
+        return _normalize(configured)
+
+    url = os.environ.get("DIRECT_URL") or os.environ.get("DATABASE_URL")
+    if not url:
+        raise RuntimeError("DIRECT_URL or DATABASE_URL must be set to run migrations")
+    return _normalize(url)
 
 
 def run_migrations_offline() -> None:
@@ -52,7 +63,11 @@ def run_migrations_online() -> None:
         poolclass=pool.NullPool,
     )
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            compare_type=True,
+        )
         with context.begin_transaction():
             context.run_migrations()
 

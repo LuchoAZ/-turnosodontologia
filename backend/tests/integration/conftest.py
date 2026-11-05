@@ -1,12 +1,17 @@
 ﻿from __future__ import annotations
 
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
+from alembic import command
+from alembic.config import Config
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from testcontainers.community.postgres import PostgresContainer
 from testcontainers.community.redis import RedisContainer
+
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _docker_available() -> bool:
@@ -52,6 +57,26 @@ def docker_services() -> Iterator[dict[str, str]]:
 @pytest.fixture
 def pg_engine(docker_services: dict[str, str]) -> Iterator[Engine]:
     eng = create_engine(docker_services["postgres_url"], future=True)
+    try:
+        yield eng
+    finally:
+        eng.dispose()
+
+
+@pytest.fixture(scope="session")
+def migrated_database(docker_services: dict[str, str]) -> str:
+    """Run the real Alembic chain (baseline + 002) once against the container."""
+    url = docker_services["postgres_url"]
+    config = Config()
+    config.set_main_option("script_location", str(BACKEND_ROOT / "alembic"))
+    config.set_main_option("sqlalchemy.url", url)
+    command.upgrade(config, "head")
+    return url
+
+
+@pytest.fixture
+def db_engine(migrated_database: str) -> Iterator[Engine]:
+    eng = create_engine(migrated_database, future=True)
     try:
         yield eng
     finally:
