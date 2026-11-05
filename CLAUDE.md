@@ -68,6 +68,15 @@ Fuente de verdad: `.atl/skill-registry.md` (**versionado** en el repo; generado 
 
 Cargá la skill correspondiente al contexto ANTES de escribir código.
 
+### Skill propia: `spec-scenario-review`
+
+Creada por el equipo con `skill-creator` y versionada en `.agents/skills/spec-scenario-review/SKILL.md`.
+
+- **Cuándo usarla**: después de `/opsx:propose` o `/opsx:update` y **antes** de `/opsx:apply`; también antes de archivar un change. Es el gate que verifica que la spec esté lista para implementar.
+- **Qué necesita**: el change (`proposal.md`, `design.md`, `specs/**/spec.md`, `tasks.md`) y las reglas de negocio relevantes de `knowledge-base/05_reglas_de_negocio.md` (y `04_modelo_de_datos.md` si hay `tenant_id`).
+- **Qué produce**: un veredicto (`LISTO PARA APLICAR` / `FALTAN ESCENARIOS` / `BLOQUEADO`), una tabla de cobertura por requisito (esperado / error de negocio / borde), los huecos detectados y el check de tenancy (RN-TEN-02).
+- **Cómo revisar el resultado**: cada requisito debe tener ≥3 escenarios verificables; cada escenario una tarea de verificación en `tasks.md`; si toca `tenant_id`, el escenario cross-tenant y el test de aislamiento son bloqueantes. No se acepta "LISTO" si falta un bloqueante.
+
 > Los compact rules de cada skill los resuelve el orquestador desde `.atl/skill-registry.md` (versionado en el repo). Las skills viven en `.agents/skills/` (project-local). Esta tabla solo mapea skill→rol.
 
 ---

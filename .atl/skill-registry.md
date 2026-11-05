@@ -25,6 +25,14 @@ Vendored into the repo so the project is self-contained. The upstream copies sti
 | Build or update the project skill registry (`.atl/skill-registry.md`) | skill-registry | .agents/skills/skill-registry/SKILL.md |
 | Research/scrape a competitor from a URL, or `discovery-research` invokes it during Discovery | web-scraper | .agents/skills/web-scraper/SKILL.md |
 
+### Own Skills (project-local, `.agents/skills/`)
+
+Creada por el equipo con `skill-creator` y adaptada al dominio. Versionada en el repo.
+
+| Trigger | Skill | Path |
+|---------|-------|------|
+| Revisar proposal/design/specs de un change antes de aplicar; "¿faltan casos borde?", "revisá la spec", "¿están los escenarios?"; gate previo a `/opsx:apply` y al archivado | spec-scenario-review | .agents/skills/spec-scenario-review/SKILL.md |
+
 ### Domain Skills (project-local, `.agents/skills/`)
 
 Vendored from `~/.agents/skills/` into the repo.
@@ -65,6 +73,14 @@ Pre-digested rules per skill. Delegators copy matching blocks into sub-agent pro
 - **RN-TEN-02 is a merge gate, not a suggestion**: any change touching a table with `tenant_id` is NOT done until it has a cross-tenant isolation test. `cross-tenant leak = 0`. RLS active on every business table (`tenant_id NOT NULL`).
 - Build in **vertical slices** (DD-03): each change delivers API + UI of its capability (not layer-by-layer).
 - Start order: C-01 → C-02 → C-03 are strictly sequential and block all else; first real fork is GATE 3. Read `CHANGES.md` before any `/opsx:propose`.
+
+### spec-scenario-review
+- Gate previo a `/opsx:apply` y al archivado: revisa proposal/design/specs, NO implementa ni reescribe la spec.
+- Cada requisito debe tener ≥3 escenarios verificables: esperado, error de negocio (RN-XX violada) y borde.
+- Cruza las reglas citadas contra `knowledge-base/05_reglas_de_negocio.md`; marca ambigüedades.
+- Si el change toca tablas con `tenant_id`, exige escenario cross-tenant + test de aislamiento en `tasks.md` (RN-TEN-02 es bloqueante).
+- Cada escenario debe tener una tarea de verificación concreta en `tasks.md`.
+- Salida fija: veredicto (LISTO / FALTAN ESCENARIOS / BLOQUEADO) + tabla de cobertura + huecos + check de tenancy + próximo paso.
 
 ### active-orchestrator
 - Thin orchestrator: only routes to sub-skills; NEVER reimplements a phase's logic.
