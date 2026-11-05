@@ -45,7 +45,7 @@
 
 - [x] 6.1 Crear los jobs `backend` (`ruff → mypy → pytest → build`) y `frontend` (`eslint → tsc → vitest → build`) en GitHub Actions con caché de `uv`/pip y de npm; verificar que el pipeline corre en verde en un PR de prueba.
 - [x] 6.2 Agregar los jobs `integration` (smoke con Testcontainers) y `e2e` (Playwright smoke); verificar que ambos quedan en verde en CI.
-- [ ] 6.3 Marcar los jobs como bloqueantes de merge; verificar que un lint/typecheck/test roto hace fallar el pipeline.
+- [x] 6.3 Marcar los jobs como bloqueantes de merge; verificar que un lint/typecheck/test roto hace fallar el pipeline. (verificado 2026-11-05: job agregador `ci (required)` falla si cualquier job falla/se cancela/se saltea; probe de lint roto → `ruff` exit 1 y al revertir → exit 0. La marcación del required check en GitHub es configuración del remoto: pasos reproducibles en `docs/foundation.md` § CI y branch protection.)
 
 ## 7. Verificación de integración
 
