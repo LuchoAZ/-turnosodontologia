@@ -21,6 +21,25 @@
 > entrega API + UI de su capacidad. El plan vigente es para **1 developer** (SU-01) con
 > **deadline 2026-10-23** (SU-02): ver **"Sprint 1 dev"** y **"Plan 1 dev"** más abajo. Los
 > namespaces por agente del plan original quedaron obsoletos: la ejecución es secuencial.
+>
+> **Números de migración**: los que aparecen en cada change son **indicativos**. La numeración
+> real vive en `backend/alembic/versions/` (`c01_baseline`, `002_core_tenancy`). Al proponer un
+> change, usá el siguiente número libre, no el del roadmap.
+
+---
+
+## Estado del roadmap (2026-11-05)
+
+| Change | Estado | Evidencia |
+|--------|--------|-----------|
+| C-01 `foundation-setup` | ✅ archivado (2026-11-05) | `openspec/specs/platform-runtime/spec.md`, `docs/foundation.md` — 32/32 tasks |
+| C-02 `core-models-tenancy` | ✅ archivado (2026-11-05) | `openspec/specs/platform-tenancy/spec.md`, `docs/core-tenancy.md` — 22/22 tasks |
+| C-03 → C-07 | ⬜ pendientes | ruta del turno (sprint) |
+
+> **Dos deadlines distintos**: el supuesto interno **SU-02 (2026-10-23)** es el deadline del
+> plan de sprint de 1 dev; la **entrega académica del TPI es 2026-11-20**. El sprint es una
+> guía de priorización, no un bloqueo: el mínimo del TPI (2 changes archivados) ya está cumplido
+> con C-01 + C-02.
 
 ---
 
@@ -103,7 +122,7 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
 ## FASE 0 — Cimientos
 
 ### [C-01] `foundation-setup` — SPRINT
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` archivado (2026-11-05) — 32/32 tasks
 - **Scope**: Scaffolding del repositorio backend/frontend (FastAPI + React/Vite) + infraestructura base
   - Estructura: `backend/` (FastAPI) + `frontend/` (React + TS + Vite)
   - `docker-compose.yml`: PostgreSQL 16 + Redis 7 para desarrollo
@@ -125,15 +144,23 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
 ## FASE 1 — Identidad y Tenancy
 
 ### [C-02] `core-models-tenancy` — SPRINT
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` archivado (2026-11-05) — 22/22 tasks
 - **Scope**: Modelos base, aislamiento multi-tenant y catálogos seed
-  - Modelos: `tenant`, `user`, `membership`, `role` (enum), `specialty` (global), `price_concept` (global), `currency`
-  - `tenant_id NOT NULL` en toda tabla de negocio + **Row Level Security** activada
-  - Middleware `SET LOCAL app.current_tenant` por transacción (SQLAlchemy)
-  - `TenantGuard` que resuelve `tenant_id` **del token, nunca del body** (RN-TEN-03)
-  - Migración `001_core_tenancy` + script de aplicación de RLS
-  - Seed: 9 roles de `03_actores_y_roles.md`, `ARS`/`USD`, ~15 specialties, ~80 `price_concept` de referencia
-  - **Tests: aislamiento cross-tenant (gate obligatorio RN-TEN-02)**
+  - Modelos: `tenant`, `user`, `membership`, `role` (enum), `specialty` (global), `price_concept` (tenant-scoped), `currency` (global)
+  - `tenant_id NOT NULL` en toda tabla de negocio + **Row Level Security** activada con `FORCE ROW LEVEL SECURITY`
+  - Contexto de tenant por transacción con `SELECT set_config('app.current_tenant', :tenant_id, true)`
+    (parameterizado: `SET LOCAL` no acepta binds) — el `TenantGuard` nunca toma `tenant_id` del body (RN-TEN-03)
+  - Rol de aplicación `odontologia_app` (`NOLOGIN`, `NOSUPERUSER`, `NOBYPASSRLS`); políticas con
+    `NULLIF(current_setting('app.current_tenant', true), '')::uuid`
+  - Migración `002_core_tenancy` (rollback verificado) + baseline `c01_baseline`
+  - Seed: 9 roles de `03_actores_y_roles.md`, `ARS`/`USD`, **9 specialties**, **80 `price_concept`**
+    (`UNIQUE NULLS NOT DISTINCT (tenant_id, codigo)`; seed previo a habilitar RLS)
+  - **RN-TEN-04 parcial**: índice único parcial `uq_membership_owner_activo`
+    (`tenant_id WHERE rol = 'owner' AND activo`) garantiza nunca 2 owners activos; el caso
+    "cero owners" (transferencia atómica) se cierra en C-04
+  - **Tests: aislamiento cross-tenant (gate obligatorio RN-TEN-02)** con `SET ROLE odontologia_app`
+    (el superusuario de tests ignora RLS) + **prueba de mutación** que desactiva una política y
+    demuestra que el test falla
 - **Dependencias**: C-01
 - **Governance**: CRITICO
 - **Leer antes**:
@@ -152,7 +179,7 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
   - Lockout progresivo tras 5 intentos + registro en `audit_log` (RN-AU-05)
   - **MFA (TOTP) obligatorio** para `owner` y `billing` (RN-AU-04)
   - Cambio de tenant activo **con re-emisión de sesión** (RN-AU-07)
-  - Migración `002_auth` (sessions, refresh_tokens, mfa_secrets)
+  - Migración `003_auth` (sessions, refresh_tokens, mfa_secrets)
   - Tests: login ok, password mal, lockout, refresh rotation + reuse detection, MFA enforcement
 - **Dependencias**: C-02
 - **Governance**: CRITICO
@@ -170,7 +197,7 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
   - `POST /tenants/:id/invitations` (expiración 7 días) + aceptación
   - `membership` con `professional_id` (rol ↔ profesional) — el mismo user en N tenants con roles distintos (RN-TEN-05)
   - Transferencia de ownership atómica: nunca 0 owners (RN-TEN-04)
-  - Migración `003_rbac` (invitations)
+  - Migración `004_rbac` (invitations)
   - Tests: cada rol ve exactamente lo de su matriz; intentos de escalada fallan
 - **Dependencias**: C-03
 - **Governance**: ALTO
@@ -188,7 +215,7 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
   - `GET/POST/PATCH /professionals` + `POST /professionals/:id/schedule`
   - `availability_rule` con `slot_min`, `buffer_previo_min`, `buffer_posterior_min`
   - Validación RN-AG-06: no 2 sillones `rx` con turno solapado (preparada, se activa en C-07)
-  - Migración `004_clinic_setup`
+  - Migración `005_clinic_setup`
   - Tests: CRUD, unicidad `(tenant_id, matricula)`, buffers persisten correctamente, cross-tenant
 - **Dependencias**: C-03
 - **Governance**: MEDIO
@@ -206,7 +233,7 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
   - Búsqueda con índice trigram en `(apellido, nombre)`
   - Alergias y `alerta_clinica` destacadas (aún sin UI clínica — la usa C-09)
   - **Frontera dura**: recepción NO ve ni escribe historia clínica (RN-CMP-04)
-  - Migración `005_patients`
+  - Migración `006_patients`
   - Tests: secuencia de HCE no reciclable, dedupe, búsqueda, cross-tenant
 - **Dependencias**: C-03
 - **Governance**: MEDIO
@@ -226,7 +253,7 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
   - **`clave_pem` nunca en logs** — test automatizado (RN-CMP-08)
   - Cliente WSAA real con cache Redis + lock por tenant (RN-ARCA-04)
   - Alertas de vencimiento 30/15/7 días (RN-ARCA-10)
-  - Migración `006_fiscal`
+  - Migración `007_fiscal`
   - Tests: cert con CUIT ajeno → rechazo; cert vencido → no emite; token cacheado; log sanitizado
 - **Dependencias**: C-03
 - **Governance**: CRITICO
@@ -245,7 +272,7 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
   - `POST /webhooks/whatsapp` con **verificación `X-Hub-Signature-256` obligatoria** (RN-COM-04)
   - **Deduplicación por `(proveedor, evento_id)`** (RN-COM-03)
   - Plantillas versionadas + `RN-COM-01` (los mensajes van por cola, no en el request)
-  - Migración `007_comms`
+  - Migración `008_comms`
   - Tests: firma inválida rechazada, webhook duplicado no reprocesa, fallo de canal no revierte negocio
 - **Dependencias**: C-03
 - **Governance**: ALTO
@@ -275,7 +302,7 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
   - Auto-`no_asistio` por job a las 4h de gracia (RN-AG-04)
   - Optimistic locking `appointment.version` (defensa secundaria)
   - RN-AG-10: paciente sin turnos solapados
-  - Migración `008_agenda` (+ extensión btree_gist)
+  - Migración `009_agenda` (+ extensión btree_gist)
   - Tests: double-booking bajo concurrencia rechazado por la BD, buffers ocupan tiempo real, waiting list por prioridad, cross-tenant
 - **Dependencias**: C-05, C-06
 - **Governance**: ALTO
@@ -307,7 +334,7 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
   - `GET/POST /patients/:id/records`; autoguardado durante la atención
   - Autoría real (RN-CLI-07): profesional solo escribe turnos propios
   - `audit_log` básico para READ/CREATE sobre HC (se completa en C-13)
-  - Migración `009_clinical_records`
+  - Migración `010_clinical_records`
   - Tests: UPDATE y DELETE fallan a nivel BD; corrección vía `supersedes_id`; recepción recibe 403; cifrado verificable
 - **Dependencias**: C-06
 - **Governance**: CRITICO
@@ -325,7 +352,7 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
   - `GET /patients/:id/chart`, `POST /patients/:id/chart/entries`
   - Estado vigente de una pieza = entrada no-superseded más reciente (RN-CLI-03)
   - Heurística de alerta clínica (profundidad > 5mm, sangrado > 30%) — **explícitamente NO diagnóstico** (RN-CLI-04)
-  - Migración `010_odontogram`
+  - Migración `011_odontogram`
   - Tests: FDI inválido rechazado, supersedes correcto, alerta se dispara en umbral, append-only
 - **Dependencias**: C-09
 - **Governance**: CRITICO
@@ -348,7 +375,7 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
   - PDF inmutable en S3 (bucket con versionado)
   - Ruta pública `/portal/consentimientos/:token` (token firmable de un solo uso)
   - Seed de **estructuras** de plantilla (el contenido legal requiere revisión — PQ-04)
-  - Migración `011_consents`
+  - Migración `012_consents`
   - Tests: firma congela versión, cambio de plantilla no altera firmados, hash verificable
 - **Dependencias**: C-06, C-09
 - **Governance**: ALTO
@@ -365,7 +392,7 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
   - Post del plan a ítems facturables (los consume C-14/C-15)
   - **Bloqueo duro**: procedimiento no pasa a `realizado` sin consentimiento obligatorio vigente (RN-CLI-06)
   - **Bloqueo**: no se marca `obturado` sin odontograma compatible (RN-CLI-05)
-  - Migración `012_treatment_plans`
+  - Migración `013_treatment_plans`
   - Tests: bloqueo por consentimiento, bloqueo por odontograma, cross-tenant
 - **Dependencias**: C-10, C-11
 - **Governance**: MEDIO
@@ -383,7 +410,7 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
   - `access_request` (Ley 25.326) con verificación de identidad y **plazo parametrizado** (no hardcodeado — PQ-03)
   - Copia autenticada de HC: job → PDF con sello + hash → S3 inmutable (US-041, plazo en PQ-02)
   - Exportación asíncrona con audit (RN-CMP-07)
-  - Migración `013_audit_aaip`
+  - Migración `014_audit_aaip`
   - Tests: UPDATE/DELETE de audit_log fallan, export genera audit, identidad verificada antes de entregar
 - **Dependencias**: C-09, C-10
 - **Governance**: CRITICO
@@ -406,7 +433,7 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
   - Cierre calcula `diferencia` **no editable**; ≠ 0 exige nota (RN-CJ-02)
   - `settlement` con `porcentaje_aplicado` **congelado** (RN-CJ-04)
   - Detección de "facturado sin caja" en conciliación (RN-CJ-06)
-  - Migración `014_cash`
+  - Migración `015_cash`
   - Tests: doble sesión abierta rechazada, diferencia no editable, porcentaje no se recalcula, aislamiento
 - **Dependencias**: C-07, C-12
 - **Governance**: ALTO
@@ -425,7 +452,7 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
   - `unique(tenant_id, tipo, serie, numero) where numero is not null` (RN-ARCA-07)
   - `POST /invoices`, `GET /invoices/:id`, anulación con motivo (RN-EX-07)
   - **Emisión asíncrona**: la UI responde en <400ms, el comprobante queda `PENDIENTE` (RN-ARCA-03)
-  - Migración `015_invoicing`
+  - Migración `016_invoicing`
   - Tests: idempotencia (2 emisiones → 1 comprobante), CHECK de totales, estado inmutable post-EMITIDO
 - **Dependencias**: C-14
 - **Governance**: CRITICO
@@ -566,15 +593,16 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
 | **Backlog post-deadline** | 17 changes (C-04, C-08…C-23) |
 | **Changes CRITICO** | 8 (C-02, C-03, C-09, C-10, C-13, C-15, C-16, C-17) |
 | **Changes ALTO** | 6 (C-04, C-07, C-11, C-14, C-18, C-23) |
-| **Changes MEDIO** | 6 (C-01, C-05, C-06, C-12, C-19, C-20, C-21) |
+| **Changes MEDIO** | 7 (C-01, C-05, C-06, C-12, C-19, C-20, C-21) |
 | **Changes BAJO** | 2 (C-08, C-22) |
 | **Requisitos MVP (los 10 imprescindibles)** | Todos cubiertos en FASE 1–7 |
 | **Post-deadline** | C-04, C-08…C-23 (facturación priorizada tras el sprint) |
+| **Archivados al 2026-11-05** | 2 (C-01, C-02) — mínimo del TPI cumplido |
 
 ### Primer change recomendado
 
 ```
-/opsx:propose C-01-foundation-setup
+/opsx:propose C-03-auth-sessions
 ```
 
 ### Advertencia de secuencia (1 dev)
