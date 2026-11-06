@@ -42,7 +42,7 @@ informado, historia clínica inmutable, RBAC/privacidad y migración con dedupe.
 | Change `c-01-foundation-setup` (monorepo, tests con Postgres/Redis reales, CI) | ✅ **Archivado** — 32/32 tasks |
 | Change `c-02-core-models-tenancy` (modelo base, RLS fail-closed, seed de catálogos) | ✅ **Archivado** — 22/22 tasks, gate RN-TEN-02 con prueba de mutación (`docs/core-tenancy.md`) |
 | Skill propia `spec-scenario-review` + MCP `context7` | ✅ Integrados con evidencia (`docs/skills-mcp/`) |
-| **Change `agendar-turno-sin-solapamiento` (ENTREGABLE TP)** | 🔜 **Pendiente — deadline 2026-10-23** |
+| **Change `agendar-turno-sin-solapamiento` (ENTREGABLE TP)** | 🟡 **Spec lista (`LISTO PARA APLICAR`)** — 6 requisitos, 24 escenarios; implementación pendiente de C-03/C-05/C-06 |
 
 **Entregable del TP (META)**: el change `agendar-turno-sin-solapamiento` — crear un turno evitando
 solapamientos por profesional y por sillón/box, con reglas de negocio verificables (RN-AG-01/02/03/09/10),
@@ -179,6 +179,9 @@ Evidencia de uso real:
 
 - `docs/skills-mcp/evidencias/revision-agendar-turno.md` → `FALTAN ESCENARIOS`, 6 huecos detectados
   antes de escribir código.
+- `docs/skills-mcp/evidencias/revision-agendar-turno-post-fix.md` → ciclo completo: los 6 huecos
+  corregidos, 2 defectos extra encontrados en la 2.ª pasada y veredicto final `LISTO PARA APLICAR`
+  (6 requisitos, 24 escenarios, 24/24 con tarea).
 - `docs/skills-mcp/evidencias/revision-c-02.md` → `LISTO PARA APLICAR`, con el hueco **RN-TEN-04**
   detectado por la skill y cerrado en C-02 (índice parcial + RED verificado).
 - `docs/skills-mcp/aplicacion.md` → informe de aplicación completo y revisión crítica.
@@ -238,6 +241,7 @@ Extraídas de `AGENTS.md` — las lee todo agente antes de tocar código:
 | `docs/skills-mcp/investigacion.md` | Ficha de investigación: skill propia + comparación y elección de MCP |
 | `docs/skills-mcp/aplicacion.md` | Informe de aplicación, evidencias y revisión crítica |
 | `docs/skills-mcp/evidencias/revision-agendar-turno.md` | Revisión `FALTAN ESCENARIOS` del entregable (6 huecos) |
+| `docs/skills-mcp/evidencias/revision-agendar-turno-post-fix.md` | Re-revisión y veredicto final `LISTO PARA APLICAR` (24/24 escenarios con tarea) |
 | `docs/skills-mcp/evidencias/revision-c-02.md` | Revisión `LISTO PARA APLICAR` de C-02 (RN-TEN-04 cerrado) |
 | `docs/entrega/guion-video.md` | Guion del video de defensa (9–10 min, con comandos y tomas de respaldo) |
 | `docs/entrega/resumen-entrega.txt` | Resumen ejecutivo de la entrega y checklist de evidencias |

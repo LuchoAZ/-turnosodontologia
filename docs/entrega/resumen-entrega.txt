@@ -44,10 +44,19 @@ Qué hace:
 Evidencia de aplicación real:
   - docs/skills-mcp/evidencias/revision-agendar-turno.md
     Change: agendar-turno-sin-solapamiento
-    Veredicto: FALTAN ESCENARIOS
+    Veredicto: FALTAN ESCENARIOS (1.ª pasada)
     Resultado: 6 huecos detectados antes de escribir código (recurso inactivo,
     turno contiguo, tipo de práctica inválido, fecha sin offset, cruce de
     medianoche, tenant_id en el body). La revisión de tenancy dio completa.
+
+  - docs/skills-mcp/evidencias/revision-agendar-turno-post-fix.md
+    Change: agendar-turno-sin-solapamiento (2.ª y 3.ª pasada)
+    Veredicto final: LISTO PARA APLICAR
+    Resultado: la 2.ª pasada encontró 2 defectos que la 1.ª no vio (doble fuente
+    para `fin` y `401` sin tarea de verificación) más una ambigüedad de buffers
+    en RN-AG-03; la 3.ª pasada confirmó el cierre con 6 requisitos, 24
+    escenarios y 24/24 con tarea. Ciclo completo: FALTAN ESCENARIOS -> corrección
+    -> LISTO PARA APLICAR.
 
   - docs/skills-mcp/evidencias/revision-c-02.md
     Change: c-02-core-models-tenancy
@@ -127,7 +136,11 @@ Requisitos: Python 3.12, uv, Docker Desktop, Node.js (frontend), OpenSpec.
   docs/skills-mcp/aplicacion.md
     Informe de aplicación, evidencias y revisión crítica.
   docs/skills-mcp/evidencias/revision-agendar-turno.md
+    Revisión inicial del change de agenda: 6 huecos y veredicto FALTAN ESCENARIOS.
+  docs/skills-mcp/evidencias/revision-agendar-turno-post-fix.md
+    Re-revisión tras cerrar los huecos: veredicto final LISTO PARA APLICAR.
   docs/skills-mcp/evidencias/revision-c-02.md
+    Revisión de C-02 y cierre del hueco RN-TEN-04.
 
 7. ESTADO Y PENDIENTES
 ------------------------------------------------------------------------------
@@ -136,11 +149,13 @@ Cumplido:
   - Skill propia creada, registrada y aplicada con evidencia.
   - MCP configurado y aplicado con una corrección técnica verificable.
   - 56 tests en verde; ruff y mypy en cero.
+  - Ciclo completo de la skill sobre el change de agenda: 6 huecos -> corrección
+    -> LISTO PARA APLICAR (24/24 escenarios con tarea).
 
 Pendiente (fuera del mínimo de esta entrega):
-  - Actualizar agendar-turno-sin-solapamiento con los 6 escenarios detectados
-    y volver a pasar spec-scenario-review hasta LISTO PARA APLICAR.
   - Implementar el entregable de agenda: C-03 -> C-05 -> C-06 -> C-07.
+    La spec de `agendar-turno-sin-solapamiento` ya está lista; el apply se pausa
+    porque sus dependencias no existen todavía como changes ni como migraciones.
 
 8. NOTA SOBRE DATOS Y SECRETOS
 ------------------------------------------------------------------------------

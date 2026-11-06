@@ -1,6 +1,6 @@
 # Informe de aplicación — skill propia y MCP
 
-**Proyecto**: Gestión Odontológica PyME (`odontologia-saas`) · **Integrantes**: 1 · **Fecha**: 2026-11-05
+**Proyecto**: Gestión Odontológica PyME (`odontologia-saas`) · **Integrantes**: 1 · **Fecha**: 2026-11-05 (actualizado 2026-11-06)
 **Entrega**: TPI Metodología I (2026-11-20)
 **Change elegido**: `c-02-core-models-tenancy` (archivado) · **Change revisado además**: `agendar-turno-sin-solapamiento`
 
@@ -18,15 +18,16 @@ qué límites tiene el enfoque. La ficha de investigación previa está en
 | Skill propia aplicada | `spec-scenario-review` sobre 2 changes (`c-02-core-models-tenancy` y `agendar-turno-sin-solapamiento`) |
 | MCP aplicado | `context7` durante el diseño y la implementación de C-02 |
 | Hueco real detectado y cerrado | **RN-TEN-04** (a lo sumo un `owner` activo por tenant) en C-02, con test RED verificado y prueba de mutación |
-| Huecos detectados antes de codear | **6** en `agendar-turno-sin-solapamiento` (veredicto `FALTAN ESCENARIOS`) |
+| Huecos detectados antes de codear | **6** en `agendar-turno-sin-solapamiento` (1.ª pasada: `FALTAN ESCENARIOS`), **corregidos y re-revisados** hasta `LISTO PARA APLICAR` (3.ª pasada) |
 | Corrección técnica atribuida a context7 | `SET LOCAL … = :tenant_id` → `SELECT set_config('app.current_tenant', :tenant_id, true)` |
 | Changes archivados | **2**: `2026-11-05-c-01-foundation-setup` y `2026-11-05-c-02-core-models-tenancy` |
 | Verificación final | `ruff` 0 · `mypy app` 0 · **56 tests passed** (17 de integración con Postgres 16 real) |
 
 El mínimo del TPI —dos changes completos, verificados y archivados— queda cumplido por C-01 y C-02.
-La skill y el MCP no se usaron "de adorno": la skill cambió el alcance de C-02 (agregó RN-TEN-04) y
-frenó la implementación del change de agenda hasta definir seis casos borde; el MCP evitó escribir de
-memoria una API de PostgreSQL/SQLAlchemy que, mal usada, rompe el aislamiento.
+La skill y el MCP no se usaron "de adorno": la skill cambió el alcance de C-02 (agregó RN-TEN-04),
+frenó la implementación del change de agenda hasta definir seis casos borde y volvió a habilitarlo
+cuando se cerraron; el MCP evitó escribir de memoria una API de PostgreSQL/SQLAlchemy que, mal usada,
+rompe el aislamiento.
 
 ---
 
@@ -42,6 +43,8 @@ La skill se usó en los dos momentos en que aporta valor:
 | Momento | Change | Qué se buscaba | Salida |
 |---------|--------|----------------|--------|
 | Antes de implementar | `agendar-turno-sin-solapamiento` | Que ningún requisito llegue a código con casos borde sin definir | Veredicto `FALTAN ESCENARIOS` + 6 huecos accionables |
+| Tras corregir los 6 huecos | `agendar-turno-sin-solapamiento` | Verificar el cierre y detectar contradicciones de contrato | 2.ª pasada: 2 defectos (doble fuente de `fin`, `401` sin tarea) + ambigüedad de buffers → corregidos |
+| Verificación final | `agendar-turno-sin-solapamiento` | Confirmar que la spec quedó implementable | Veredicto `LISTO PARA APLICAR` (6 requisitos, 24 escenarios, 24/24 con tarea) |
 | Antes de archivar | `c-02-core-models-tenancy` | Que la spec implementada cubra todas las reglas de negocio y el gate de tenancy | Veredicto `LISTO PARA APLICAR` + 1 hueco cerrado (RN-TEN-04) |
 
 El MCP se usó en la fase de diseño de C-02 (D2, D3 y el constraint de exclusión de C-06) y se volvió a
@@ -53,8 +56,8 @@ consultar durante la implementación cuando un test de integración puso en duda
 
 **Entradas**: `proposal.md`, `design.md`, `specs/agenda/appointments/spec.md`, `tasks.md`,
 `05_reglas_de_negocio.md` (§ Tenancy, § Agenda) y `04_modelo_de_datos.md` (§ Agenda).
-**Spec revisada**: 6 requisitos, 14 escenarios.
-**Evidencia**: [`evidencias/revision-agendar-turno.md`](evidencias/revision-agendar-turno.md).
+**Spec revisada (estado inicial)**: 6 requisitos, 14 escenarios.
+**Evidencia**: [`evidencias/revision-agendar-turno.md`](evidencias/revision-agendar-turno.md) y la verificación final en [`evidencias/revision-agendar-turno-post-fix.md`](evidencias/revision-agendar-turno-post-fix.md).
 
 ### Veredicto: `FALTAN ESCENARIOS`
 
@@ -87,8 +90,29 @@ tenancy dio **completa**: el change toca `appointment`, `chair`, `professional` 
 escenario cross-tenant y el test de aislamiento está en `tasks.md` (tarea 6.1, con prueba de mutación).
 No hay bloqueante de tenancy; el veredicto es por escenarios faltantes, no por seguridad.
 
-**Estado**: los seis huecos siguen **abiertos a propósito**. El próximo `/opsx:update` de ese change
-tiene que incorporarlos y volver a pasar la skill; recién entonces pasa a `LISTO PARA APLICAR`.
+### Cierre del ciclo (2026-11-06)
+
+Los seis huecos se corrigieron en los artefactos del change y se volvió a pasar la skill. La segunda
+pasada encontró dos defectos que la primera no vio —**doble fuente de verdad para `fin`** (se enviaba
+en el payload y además se derivaba) y **`401` sin tarea de verificación**— más una ambigüedad de
+buffers en RN-AG-03. La tercera pasada dio **`LISTO PARA APLICAR`** con 6 requisitos, 24 escenarios y
+24/24 escenarios con tarea.
+
+| Hueco | Decisión adoptada |
+|-------|-------------------|
+| 1. Recurso inactivo | `409` con `{ recurso, motivo: "recurso_inactivo" }` |
+| 2. Turno contiguo | `201` (rango semiabierto; caso explícito con buffers 0) |
+| 3. Tipo de práctica inválido | `422` por enum Pydantic; duración ≤ 0 → `409 duracion_invalida` |
+| 4. UTC | `inicio` con offset obligatorio; `fin` derivado; cruce de medianoche cubierto |
+| 5. RN-AG-10 | lista explícita de estados; `patient_id NULL` no aplica |
+| 6. `tenant_id` | se descarta de body/query/header antes de validar; nunca se lee ni se rechaza |
+
+El ciclo también destapó un problema que la revisión de escenarios sola no habría encontrado: el change
+asumía que C-02 aportaba `appointment`, pero C-02 lo había excluido explícitamente. Ahora el change es
+dueño del modelo, del `EXCLUDE USING gist` y de su RLS (tareas 0.1 y 0.2).
+
+**Estado**: `LISTO PARA APLICAR`, condicionado a que existan C-03, C-05 y C-06 —hoy no existen ni como
+changes ni como migraciones—. El apply se pausa hasta entonces; la spec ya no es el bloqueante.
 
 ---
 
@@ -218,7 +242,8 @@ una migración futura.
 | `.atl/skill-registry.md` | Alta en *Own Skills* + compact rules |
 | `AGENTS.md` / `CLAUDE.md` | Sección "Skill propia" (ambos idénticos) |
 | `docs/skills-mcp/investigacion.md` | Ficha de investigación y elección del MCP |
-| `docs/skills-mcp/evidencias/revision-agendar-turno.md` | Revisión con veredicto `FALTAN ESCENARIOS` y 6 huecos |
+| `docs/skills-mcp/evidencias/revision-agendar-turno.md` | 1.ª pasada: `FALTAN ESCENARIOS` y 6 huecos |
+| `docs/skills-mcp/evidencias/revision-agendar-turno-post-fix.md` | 2.ª y 3.ª pasada: defectos de contrato cerrados y veredicto final `LISTO PARA APLICAR` (24/24 escenarios con tarea) |
 | `docs/skills-mcp/evidencias/revision-c-02.md` | Revisión con veredicto `LISTO PARA APLICAR` y RN-TEN-04 cerrado |
 | `docs/core-tenancy.md` | Modelo, RLS, rol, seed, prueba de mutación y comandos |
 | `backend/app/db/tenant_context.py` | `set_config` parameterizado y transaction-local |
@@ -268,9 +293,11 @@ uv run pytest tests/integration/test_migration_reversibility.py -q
   aparecía recién en C-04. Es el mejor argumento para que la skill exista.
 - **La skill obligó a probar el RED.** No aceptó "el test pasa": pidió la prueba de que el test falla
   sin el constraint. Eso convirtió RN-TEN-04 en una garantía verificable, no en una línea de spec.
-- **Frenó el change de agenda antes de codear.** Los seis huecos son, en su mayoría, decisiones de
-  contrato (¿qué HTTP status para un recurso inactivo?, ¿el turno contiguo solapa o no?). Escribir
-  código antes de decidirlas garantiza retrabajo.
+- **Frenó el change de agenda antes de codear, y después lo habilitó.** Los seis huecos son, en su
+  mayoría, decisiones de contrato (¿qué HTTP status para un recurso inactivo?, ¿el turno contiguo
+  solapa o no?). Escribir código antes de decidirlas garantiza retrabajo. Corregidos los huecos, la
+  skill volvió a pasar y dio `LISTO PARA APLICAR`: el gate no es un freno permanente, es un criterio
+  de salida.
 - **Context7 evitó una API inventada.** `SET`/`SET LOCAL` con parámetros bindeados es exactamente el
   tipo de cosa que un modelo "completa" mal. La consulta fue barata y la corrección quedó en el
   diseño y en el código, con un test que la respalda.
@@ -298,7 +325,8 @@ uv run pytest tests/integration/test_migration_reversibility.py -q
   `mypy app`, que pasa. Se documenta para que nadie lo confunda con una regresión del change.
 - **Alcance declarado, no maquillado.** RN-TEN-04 garantiza *a lo sumo* un owner activo; la
   invariante *exactamente uno* (cero owners) requiere la transacción atómica de C-04 y así quedó
-  escrito. Los seis huecos de agenda siguen abiertos y son el backlog del próximo `/opsx:update`.
+  escrito. Los seis huecos de agenda se cerraron y la spec quedó `LISTO PARA APLICAR`; lo que falta
+  para implementarla son sus dependencias (C-03/C-05/C-06), no la spec.
 - **La prueba de mutación es una garantía de test, no de runtime.** Demuestra que la suite detecta la
   ausencia de la política/constraint; la garantía en producción sigue siendo RLS + el rol sin
   `BYPASSRLS`.
@@ -309,8 +337,9 @@ uv run pytest tests/integration/test_migration_reversibility.py -q
    detectado una iteración antes y el `design.md` habría nacido con el índice parcial.
 2. Agregar al `tasks.md` de cada change una tarea explícita "pasar `spec-scenario-review` y adjuntar
    la evidencia", como se hizo en C-02 (tarea 5.4), para que no dependa de la memoria.
-3. Para el próximo change, resolver primero los seis huecos de agenda y recién después escribir
-   migración y endpoints: el contrato de errores (`404`/`409`/`422`) define el código, no al revés.
+3. Para el próximo change, pasar la skill **dos veces** cuando se corrijan huecos: la segunda pasada
+   del change de agenda encontró dos defectos que la primera no vio (doble fuente para `fin` y `401`
+   sin tarea). Una sola pasada verde no alcanza después de tocar la spec.
 
 ---
 
@@ -320,11 +349,13 @@ La aplicación de la skill y del MCP dejó resultados verificables, no una decla
 
 - **C-01 y C-02 archivados** (mínimo del TPI cumplido), con 22/22 tasks en C-02 y 56 tests en verde.
 - **RN-TEN-04 cerrado** con requisito, índice parcial, dos tests y RED demostrado.
-- **Seis huecos de agenda detectados** antes de escribir la primera línea del entregable.
+- **Ciclo completo sobre la agenda**: seis huecos detectados antes de escribir la primera línea del
+  entregable, corregidos, re-revisados y veredicto final `LISTO PARA APLICAR` (6 requisitos,
+  24 escenarios, 24/24 con tarea).
 - **Una corrección técnica concreta** (`set_config` parameterizado) que evita un leak entre
   transacciones del pool.
 
-**Próximo paso**: actualizar `agendar-turno-sin-solapamiento` con los seis escenarios, volver a pasar
-`spec-scenario-review` hasta `LISTO PARA APLICAR`, y recién entonces implementar el entregable
-(C-03 → C-05 → C-06 → C-07). La documentación de la entrega (video y TXT) se apoya en este informe y
-en [`investigacion.md`](investigacion.md).
+**Próximo paso**: implementar el entregable ejecutando C-03 → C-05 → C-06 y después
+`/opsx:apply agendar-turno-sin-solapamiento`. La spec ya no es el bloqueante; las dependencias sí.
+La documentación de la entrega (video y TXT) se apoya en este informe y en
+[`investigacion.md`](investigacion.md).

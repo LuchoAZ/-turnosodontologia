@@ -17,6 +17,7 @@
 - [ ] Cerrar pestañas con datos personales o secretos (`.env` **no** se muestra).
 - [ ] Tener a mano: `README.md`, `docs/skills-mcp/aplicacion.md`,
       `docs/skills-mcp/evidencias/revision-c-02.md`, `docs/skills-mcp/evidencias/revision-agendar-turno.md`,
+      `docs/skills-mcp/evidencias/revision-agendar-turno-post-fix.md`,
       `openspec/specs/platform-tenancy/spec.md`, `backend/tests/integration/test_core_tenancy_migration.py`.
 
 ---
@@ -70,7 +71,7 @@ requisito de RN-TEN-04 y leer los tres escenarios en voz alta.
 > de negocio y caso borde. Además cruza las reglas RN-XX contra la knowledge base y bloquea si falta
 > el check de tenancy. El veredicto es uno de tres: listo para aplicar, faltan escenarios o bloqueado."
 
-### 3.1 Evidencia sobre el entregable (2:40–3:30)
+### 3.1 Evidencia sobre el entregable: el ciclo completo (2:40–3:40)
 
 **Abrir**: `docs/skills-mcp/evidencias/revision-agendar-turno.md`.
 
@@ -84,7 +85,21 @@ requisito de RN-TEN-04 y leer los tres escenarios en voz alta.
 
 **Mostrar**: la tabla de cobertura y los seis huecos. No hace falta leerlos todos.
 
-### 3.2 Evidencia sobre C-02: el hueco que encontró (3:30–4:40)
+**Cambiar a**: `docs/skills-mcp/evidencias/revision-agendar-turno-post-fix.md`.
+
+**Decir**:
+
+> "Corregimos los seis huecos y volvimos a pasar la skill. Y acá está el valor real del gate: la
+> segunda pasada encontró dos defectos que la primera no vio. El payload aceptaba `fin` y además el
+> servidor lo derivaba — dos fuentes de verdad para el mismo dato — y el `401` estaba en la spec pero
+> no tenía ninguna tarea que lo verificara. La tercera pasada, ya sin defectos, dio listo para aplicar
+> con seis requisitos, veinticuatro escenarios y veinticuatro de veinticuatro con tarea de
+> verificación. El ciclo es visible en el historial del propio archivo: faltan escenarios, corrección,
+> listo para aplicar."
+
+**Mostrar**: la tabla "Historial de la revisión" al inicio de la evidencia y el veredicto final.
+
+### 3.2 Evidencia sobre C-02: el hueco que encontró (3:40–4:40)
 
 **Abrir**: `docs/skills-mcp/evidencias/revision-c-02.md`.
 
@@ -189,9 +204,9 @@ uv run pytest -q
 > runtime: la garantía en producción sigue siendo RLS más un rol sin `BYPASSRLS`."
 
 > "Estado de la entrega: C-01 y C-02 archivados, 22 de 22 tasks en C-02, 56 tests en verde, y la
-> documentación completa en `docs/skills-mcp/`. El próximo paso es actualizar el change de agenda con
-> los seis escenarios, volver a pasar la skill hasta listo para aplicar, y recién entonces implementar
-> el entregable. Gracias."
+> documentación completa en `docs/skills-mcp/`. El change de agenda ya pasó el gate con listo para
+> aplicar; el próximo paso es implementar sus dependencias, C-03, C-05 y C-06, y recién entonces
+> escribir el entregable. Gracias."
 
 ---
 
