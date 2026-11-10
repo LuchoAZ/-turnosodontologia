@@ -14,6 +14,7 @@ BASE_ENV: dict[str, str] = {
     "REDIS_URL": "redis://localhost:6379/0",
     "SESSION_SECRET": "s" * 64,
     "JWT_REFRESH_SECRET": "j" * 64,
+    "MFA_ENCRYPTION_KEY": "m" * 32,
 }
 
 

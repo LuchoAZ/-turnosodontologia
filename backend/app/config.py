@@ -53,7 +53,13 @@ class Settings(BaseSettings):
     # Secrets
     session_secret: str = Field(alias="SESSION_SECRET")
     jwt_refresh_secret: str = Field(alias="JWT_REFRESH_SECRET")
+    mfa_encryption_key: str = Field(alias="MFA_ENCRYPTION_KEY")
     kms_master_key_id: str | None = Field(default=None, alias="KMS_MASTER_KEY_ID")
+
+    # Auth sessions (C-03)
+    cookie_secure: bool = Field(default=True, alias="COOKIE_SECURE")
+    access_token_ttl_seconds: int = Field(default=900, alias="ACCESS_TOKEN_TTL_SECONDS")
+    session_ttl_hours: int = Field(default=12, alias="SESSION_TTL_HOURS")
 
     # ARCA (fiscal)
     arca_wsdl_prod_url: str | None = Field(default=None, alias="ARCA_WSDL_PROD_URL")

@@ -7,11 +7,15 @@ from enum import StrEnum
 from uuid import UUID
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
+    CheckConstraint,
     DateTime,
     Enum,
     ForeignKey,
     Index,
+    Integer,
+    SmallInteger,
     String,
     Text,
     UniqueConstraint,
@@ -79,6 +83,11 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         Index("uq_user_email", "email", unique=True, postgresql_where=text("email IS NOT NULL")),
         Index("ix_user_telefono", "telefono"),
         Index("ix_user_dni", "dni"),
+        CheckConstraint(
+            "failed_login_count BETWEEN 0 AND 5", name="ck_user_failed_login_count"
+        ),
+        CheckConstraint("lockout_strikes >= 0", name="ck_user_lockout_strikes"),
+        CheckConstraint("credentials_version >= 0", name="ck_user_credentials_version"),
     )
 
     email: Mapped[str | None] = mapped_column(CITEXT, nullable=True)
@@ -90,6 +99,30 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     activo: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     mfa_secret: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Lockout progresivo (C-03, design D6)
+    failed_login_count: Mapped[int] = mapped_column(
+        SmallInteger, nullable=False, server_default=text("0")
+    )
+    lockout_strikes: Mapped[int] = mapped_column(
+        SmallInteger, nullable=False, server_default=text("0")
+    )
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_lockout_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    # MFA TOTP (C-03, design D5)
+    mfa_enrolled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    mfa_secret_key_version: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    last_totp_step: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+
+    # Invalidación por credencial (C-03, design D4.4)
+    credentials_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
 
 
 class Membership(UUIDPrimaryKeyMixin, Base):

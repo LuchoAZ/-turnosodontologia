@@ -49,3 +49,23 @@ def test_load_config_environment_is_case_sensitive(base_env: dict[str, str]) -> 
 
     with pytest.raises(ValidationError):
         load_config(base_env)
+
+
+def test_load_config_requires_mfa_encryption_key_in_production(
+    base_env: dict[str, str],
+) -> None:
+    base_env["ENVIRONMENT"] = "production"
+    del base_env["MFA_ENCRYPTION_KEY"]
+
+    with pytest.raises(ValidationError) as excinfo:
+        load_config(base_env)
+
+    assert "MFA_ENCRYPTION_KEY" in format_config_error(excinfo.value)
+
+
+def test_load_config_auth_defaults(base_env: dict[str, str]) -> None:
+    settings = load_config(base_env)
+
+    assert settings.cookie_secure is True
+    assert settings.access_token_ttl_seconds == 900
+    assert settings.session_ttl_hours == 12
