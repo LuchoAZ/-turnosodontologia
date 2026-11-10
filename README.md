@@ -41,6 +41,7 @@ informado, historia clínica inmutable, RBAC/privacidad y migración con dedupe.
 | CI (GitHub Actions): lint → typecheck → unit → integration → e2e → build | ✅ Verde en `main` (5/5 jobs); gate `ci (required)` versionado (marcación en GitHub documentada en `docs/foundation.md`) |
 | Change `c-01-foundation-setup` (monorepo, tests con Postgres/Redis reales, CI) | ✅ **Archivado** — 32/32 tasks |
 | Change `c-02-core-models-tenancy` (modelo base, RLS fail-closed, seed de catálogos) | ✅ **Archivado** — 22/22 tasks, gate RN-TEN-02 con prueba de mutación (`docs/core-tenancy.md`) |
+| Change `c-03-auth-sessions` (sesión httpOnly, login, MFA, reset, switch-tenant, guardas + e2e) | 🟡 Implementado y verificado (193 tests backend, 22 unit frontend, 6 e2e Playwright) — pendiente de archive |
 | Skill propia `spec-scenario-review` + MCP `context7` | ✅ Integrados con evidencia (`docs/skills-mcp/`) |
 | **Change `agendar-turno-sin-solapamiento` (ENTREGABLE TP)** | 🟡 **Spec lista (`LISTO PARA APLICAR`)** — 6 requisitos, 24 escenarios; implementación pendiente de C-03/C-05/C-06 |
 
@@ -160,7 +161,8 @@ GET http://localhost:8000/ready     # readiness (Postgres + Redis)
 ```bash
 pytest                     # backend: unit + integration (Testcontainers: Postgres 16 + Redis 7 reales)
 npm test                   # frontend: unit (Vitest)
-npm run test:e2e           # e2e (Playwright) del formulario web
+npm run test:e2e           # e2e (Playwright) contra backend real (Testcontainers + Alembic + seed)
+# Si 5173 está ocupado (p. ej. por Docker Desktop): E2E_WEB_PORT=5180 npm run test:e2e
 ```
 
 **CI (GitHub Actions)**: `lint → typecheck → unit → integration → e2e → build` por app; todos los jobs
@@ -238,6 +240,7 @@ Extraídas de `AGENTS.md` — las lee todo agente antes de tocar código:
 | `.atl/skill-registry.md` | Registro de skills (metodología + dominio, vendorizadas en `.agents/skills/`) |
 | `docs/foundation.md` | Cómo correr, sondas de salud, variables de entorno y CI/branch protection |
 | `docs/core-tenancy.md` | Modelo base, políticas RLS, rol de app, seed y prueba de mutación |
+| `docs/auth.md` | Sesión httpOnly, contrato de los 10 endpoints de auth, lockout, MFA, reset, switch-tenant, proxy de Vite y orquestación del e2e (con salidas reales) |
 | `docs/skills-mcp/investigacion.md` | Ficha de investigación: skill propia + comparación y elección de MCP |
 | `docs/skills-mcp/aplicacion.md` | Informe de aplicación, evidencias y revisión crítica |
 | `docs/skills-mcp/evidencias/revision-agendar-turno.md` | Revisión `FALTAN ESCENARIOS` del entregable (6 huecos) |

@@ -11,17 +11,35 @@
 1. Identificar el change a implementar (verificar que sus dependencias están en `openspec/changes/archive/`).
 2. Leer los docs de la knowledge-base indicados en "Leer antes".
 3. Ejecutar `/opsx:propose <nombre-del-change>`.
-4. Al terminar el change, archivarlo con `/opsx:archive <nombre-del-change>`.
-5. Marcar el checkbox `[x]` en este archivo.
+4. Implementar las tasks y **verificar** (tests + funcionamiento real).
+5. Archivar con `/opsx:archive <nombre-del-change>`.
+6. Marcar el estado real en este archivo (§ Estado del roadmap).
+
+## Cuándo cuenta un change (definición de terminado)
+
+Un change cuenta solo si recorrió el ciclo completo. Los cuatro gates son acumulativos y ninguno se
+puede saltear:
+
+| Gate | Qué exige | Evidencia en el repo |
+|------|-----------|----------------------|
+| **1. Propuesto** | `proposal.md` (propósito y alcance), `design.md` (decisiones), `specs/**/spec.md` (escenarios verificables) y `tasks.md` | `openspec/changes/<nombre>/` |
+| **2. Aplicado** | Implementación integrada y todas las tasks del alcance completadas | Código en `backend/` y `frontend/`, tasks `[x]` |
+| **3. Verificado** | Tests automatizados de los escenarios **ejecutados** (`pytest`, `vitest`, `playwright`) + prueba de funcionamiento real contra el backend. Archivar no reemplaza probar | Salida de tests documentada (`docs/<change>.md`) |
+| **4. Archivado** | `openspec archive` + spec principal sincronizada + este roadmap actualizado | `openspec/changes/archive/YYYY-MM-DD-<nombre>/` |
+
+> **Un change con funcionalidades incompletas o sin la verificación de su alcance NO se cuenta**,
+> aunque la carpeta esté en `archive/`. Si una limitación impide verificar algo comprometido, se
+> resuelve antes de contarlo. Los changes propuestos o en desarrollo se informan como tales y no se
+> presentan como funcionalidad terminada.
 
 > **Regla de oro (RN-TEN-02)**: ningún change que toque una tabla con `tenant_id` se considera
 > terminado sin su test de aislamiento cross-tenant. Es gate de merge, no sugerencia.
->
+
 > **Nota de alcance**: el proyecto se construye en **vertical slices** (DD-03). Cada change
 > entrega API + UI de su capacidad. El plan vigente es para **1 developer** (SU-01) con
 > **deadline 2026-10-23** (SU-02): ver **"Sprint 1 dev"** y **"Plan 1 dev"** más abajo. Los
 > namespaces por agente del plan original quedaron obsoletos: la ejecución es secuencial.
->
+
 > **Números de migración**: los que aparecen en cada change son **indicativos**. La numeración
 > real vive en `backend/alembic/versions/` (`c01_baseline`, `002_core_tenancy`). Al proponer un
 > change, usá el siguiente número libre, no el del roadmap.
@@ -32,14 +50,22 @@
 
 | Change | Estado | Evidencia |
 |--------|--------|-----------|
-| C-01 `foundation-setup` | ✅ archivado (2026-11-05) | `openspec/specs/platform-runtime/spec.md`, `docs/foundation.md` — 32/32 tasks |
-| C-02 `core-models-tenancy` | ✅ archivado (2026-11-05) | `openspec/specs/platform-tenancy/spec.md`, `docs/core-tenancy.md` — 22/22 tasks |
-| C-03 → C-07 | ⬜ pendientes | ruta del turno (sprint) |
+| C-01 `foundation-setup` | ✅ **cuenta** — archivado (2026-11-05) | `openspec/specs/platform-runtime/spec.md`, `docs/foundation.md` — 32/32 tasks, tests en verde |
+| C-02 `core-models-tenancy` | ✅ **cuenta** — archivado (2026-11-05) | `openspec/specs/platform-tenancy/spec.md`, `docs/core-tenancy.md` — 22/22 tasks, 56 tests, mutación |
+| `agendar-turno-sin-solapamiento` | 🟡 propuesto — **NO cuenta** (0/13 tasks) | Spec `LISTO PARA APLICAR` (6 req., 24 escenarios); falta aplicar y verificar |
+| C-03 `auth-sessions` | ✅ **cuenta** — archivado (2026-11-10) | `openspec/specs/platform-auth/spec.md`, `docs/auth.md` — 54/54 tasks; `pytest` **193 passed**, `vitest` **22 passed**, `playwright` **6 passed** (4 de auth con navegador) |
+| C-04, C-05, C-06 | ⬜ pendientes — **NO cuentan** | Ni propuestos; son los que completan los criterios 2, 3 y 5 del TPI |
 
 > **Dos deadlines distintos**: el supuesto interno **SU-02 (2026-10-23)** es el deadline del
 > plan de sprint de 1 dev; la **entrega académica del TPI es 2026-11-20**. El sprint es una
-> guía de priorización, no un bloqueo: el mínimo del TPI (2 changes archivados) ya está cumplido
-> con C-01 + C-02.
+> guía de priorización, no un bloqueo.
+>
+> **Estado frente a los 5 criterios del TPI** (fundación, modelos/persistencia, auth/permisos,
+> agenda, frontend): C-01 cubre el 1; C-02 cubre el 2 solo en parte (tenancy y catálogos, sin
+> entidades clínicas); **C-03 (archivado) cubre el 3 —login, acceso autorizado y rechazo de accesos
+> inválidos, verificado con e2e de navegador— y el frente de auth del 5 (SPA consumiendo el backend
+> real)**. **El criterio 4 (agenda y turnos) sigue sin cubrir**: para llegar al entregable hay que
+> cerrar el ciclo completo de **C-04, C-05, C-06 y `agendar-turno-sin-solapamiento`**.
 
 ---
 
@@ -170,7 +196,7 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
   - `knowledge-base/08_arquitectura_propuesta.md` §Aislamiento (defense in depth)
 
 ### [C-03] `auth-sessions` — SPRINT
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` archivado (2026-11-10) — 54/54 tasks; spec en `openspec/specs/platform-auth/`, documento en `docs/auth.md`
 - **Scope**: Autenticación completa con sesión y MFA
   - `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `GET /auth/me`
   - `GET /forgot-password`, `POST /reset-password` (token opaco de un solo uso, 30 min)
