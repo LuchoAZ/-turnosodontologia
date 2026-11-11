@@ -326,15 +326,18 @@ inválida o manipulada, o con sesión revocada, MUST responder `401 not_authenti
 Si el access JWT tiene firma válida pero `exp` vencido, MUST responder `401 session_expired` para
 que el cliente intente el refresh. Si la `credentials_version` de la sesión quedó atrás de la del
 `user`, MUST responder `401 credentials_changed` y revocar esa sesión. `GET /api/v1/auth/me` MUST
-devolver usuario, tenant activo, roles y estado de MFA, sin `password_hash`, `mfa_secret` ni
-tokens. El orden obligatorio es: resolver acotado → `set_config('app.current_tenant', :tid, true)`
-→ consulta de `session`/`membership` bajo RLS.
+devolver usuario, tenant activo, roles, estado de MFA y `permissions` —los permisos efectivos del
+tenant activo calculados en el servidor según `platform-rbac`—, sin `password_hash`, `mfa_secret` ni
+tokens. `permissions` MUST NOT aceptarse del cliente ni persistirse en el token: se recalcula en cada
+respuesta de sesión (`login`, `refresh`, `switch-tenant`, MFA y `me`). El orden obligatorio es:
+resolver acotado → `set_config('app.current_tenant', :tid, true)` → consulta de
+`session`/`membership` bajo RLS → permisos.
 
 #### Scenario: S7.1 — Sesión válida devuelve el perfil sin secretos
 
 - **WHEN** se consulta `GET /api/v1/auth/me` con cookies de sesión válidas
 - **THEN** responde `200` con `user` (id, email, nombre, apellido), `tenant` (id, slug,
-  nombre_comercial), `roles` y `mfa_enrolled`
+  nombre_comercial), `roles`, `mfa_enrolled` y `permissions`
 - **AND** el JSON serializado no contiene las claves `password_hash`, `mfa_secret`,
   `refresh_token` ni `access_token`
 
@@ -360,6 +363,14 @@ tokens. El orden obligatorio es: resolver acotado → `set_config('app.current_t
 - **THEN** `require_auth` responde `401 credentials_changed`, marca `session.revoked_at` bajo el
   tenant de esa sesión y no ejecuta el endpoint
 - **AND** el refresh de esa misma sesión responde `401 credentials_changed` y no rota el token
+
+#### Scenario: S7.5 — Los permisos son de solo lectura y del tenant de la sesión
+
+- **WHEN** un cliente envía un campo `permissions` o `roles` en el body de `login`, `refresh` o
+  `switch-tenant`, o manipula la cookie de access
+- **THEN** el campo enviado se ignora (o se rechaza por el DTO) y `permissions` se calcula
+  exclusivamente desde las memberships activas del tenant resuelto
+- **AND** ningún permiso del token ni de la respuesta pertenece a otro tenant del mismo usuario
 
 ### Requirement: Aislamiento RLS de las tablas de sesión (RN-TEN-02)
 
