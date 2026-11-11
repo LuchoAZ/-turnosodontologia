@@ -51,6 +51,12 @@ export interface SessionOut {
   user: UserOut
   tenant: TenantOut
   roles: Role[]
+  /**
+   * Permisos efectivos resueltos por el backend desde la matriz RBAC (C-04).
+   * La UI decide visibilidad **por acá**, nunca comparando `roles` contra
+   * literales: un rol nuevo o un permiso adicional no obliga a tocar el front.
+   */
+  permissions: string[]
   mfa_enrolled: boolean
 }
 

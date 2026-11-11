@@ -12,6 +12,13 @@ export type SignInResult =
 export interface AuthContextValue {
   status: AuthStatus
   session: SessionOut | null
+  /**
+   * ¿La sesión tiene este permiso? Es la **única** forma de decidir
+   * visibilidad en la UI (design D9): los `roles` no se comparan nunca.
+   */
+  hasPermission: (permission: string) => boolean
+  /** Vuelve a leer `GET /auth/me` (p. ej. después de cambiar de tenant). */
+  reloadSession: () => Promise<void>
   /** Login por contraseña; devuelve qué estado de MFA corresponde. */
   signIn: (payload: LoginRequest) => Promise<SignInResult>
   /** Genera el secreto del alta de TOTP (solo en `mfaEnrollment`). */

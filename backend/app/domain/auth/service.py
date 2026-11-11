@@ -39,6 +39,7 @@ from app.domain.auth.mfa import (
 from app.domain.auth.passwords import hash_password, verify_password
 from app.domain.auth.tokens import hash_token, new_opaque_token
 from app.domain.auth.totp import generate_secret, provisioning_uri, verify_code
+from app.domain.rbac.matrix import resolve_permissions
 from app.models.auth import PasswordResetToken, RefreshEstado, RefreshToken
 from app.models.auth import Session as SessionModel
 from app.models.tenancy import Membership, Role, Tenant, TenantEstado, User
@@ -105,6 +106,9 @@ def session_out(user: User, tenant: Tenant, roles: list[Role]) -> SessionOut:
         user=UserOut.model_validate(user),
         tenant=TenantOut.model_validate(tenant),
         roles=[role.value for role in roles],
+        permissions=sorted(
+            permission.value for permission in resolve_permissions(roles)
+        ),
         mfa_enrolled=user.mfa_enrolled_at is not None,
     )
 

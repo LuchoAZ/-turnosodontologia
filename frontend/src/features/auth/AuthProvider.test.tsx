@@ -18,6 +18,7 @@ const SESSION: SessionOut = {
   user: { id: 'u-1', email: 'demo@example.test', nombre: 'Demo', apellido: 'Pérez' },
   tenant: { id: 't-1', slug: 'clinica-demo', nombre_comercial: 'Clínica Demo' },
   roles: ['professional'],
+  permissions: [],
   mfa_enrolled: true,
 }
 

@@ -13,6 +13,8 @@ from uuid import UUID, uuid4
 
 import pyotp
 from app.domain.auth.totp import generate_secret
+from app.domain.rbac.matrix import ROLE_PERMISSIONS
+from app.models.tenancy import Role
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
@@ -129,6 +131,47 @@ def test_switch_reemite_sesion_y_me_ignora_el_tenant_del_query(
 
     # La cookie rotada sigue siendo un refresh válido de la sesión de B.
     assert client.post(REFRESH_URL).status_code == 200
+
+
+def test_switch_devuelve_los_permisos_del_tenant_destino(
+    client: TestClient, seeder: Any
+) -> None:
+    """S4.2: los permisos se recalculan por tenant, no se arrastran de A."""
+    slug_a = f"perm-a-{uuid4().hex[:6]}"
+    slug_b = f"perm-b-{uuid4().hex[:6]}"
+    tenant_a = seeder.tenant(slug=slug_a)
+    tenant_b = seeder.tenant(slug=slug_b)
+    email = f"perm-{uuid4().hex[:8]}@example.test"
+    user_id = seeder.user(email=email)
+    seeder.membership(tenant_a, user_id, "professional")
+    seeder.membership(tenant_b, user_id, "front_desk")
+
+    logged_in = _login(client, slug_a, email)
+
+    assert logged_in.status_code == 200, logged_in.text
+    assert logged_in.json()["permissions"] == sorted(
+        permission.value for permission in ROLE_PERMISSIONS[Role.professional]
+    )
+    assert "chart.finalize" in logged_in.json()["permissions"]
+
+    switched = client.post(SWITCH_URL, json={"tenant_slug": slug_b})
+
+    assert switched.status_code == 200, switched.text
+    body = switched.json()
+    assert body["tenant"]["slug"] == slug_b
+    assert body["roles"] == ["front_desk"]
+    assert body["permissions"] == sorted(
+        permission.value for permission in ROLE_PERMISSIONS[Role.front_desk]
+    )
+    assert "chart.finalize" not in body["permissions"]
+    assert "chart.read" not in body["permissions"]
+    assert "appointment.create" in body["permissions"]
+
+    # /me en B coincide: la sesión vieja de A no aporta permisos.
+    after = client.get(ME_URL)
+
+    assert after.status_code == 200
+    assert after.json()["permissions"] == body["permissions"]
 
 
 def test_switch_sin_membership_no_toca_la_sesion_de_a(

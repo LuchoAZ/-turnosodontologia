@@ -42,8 +42,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const signIn = useCallback(async (payload: LoginRequest): Promise<SignInResult> => {
+  const hasPermission = useCallback(
+    (permission: string) => state.session?.permissions.includes(permission) ?? false,
+    [state.session],
+  )
+
+  const reloadSession = useCallback(async () => {
     try {
+      const session = await authApi.me()
+      setState({ status: 'authenticated', session })
+    } catch {
+      setState(ANONYMOUS)
+    }
+  }, [])
+
+  const signIn = useCallback(async (payload: LoginRequest): Promise<SignInResult> => {    try {
       const session = await authApi.login(payload)
       setState({ status: 'authenticated', session })
       return { kind: 'authenticated' }
@@ -82,13 +95,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       status: state.status,
       session: state.session,
+      hasPermission,
+      reloadSession,
       signIn,
       startEnrollment,
       completeMfa,
       completeEnrollment,
       signOut,
     }),
-    [state, signIn, startEnrollment, completeMfa, completeEnrollment, signOut],
+    [
+      state,
+      hasPermission,
+      reloadSession,
+      signIn,
+      startEnrollment,
+      completeMfa,
+      completeEnrollment,
+      signOut,
+    ],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

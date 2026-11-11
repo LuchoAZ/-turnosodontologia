@@ -11,6 +11,8 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
+from app.domain.rbac.matrix import ROLE_PERMISSIONS
+from app.models.tenancy import Role
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
@@ -219,3 +221,34 @@ def test_las_cookies_llevan_secure_en_produccion_y_no_en_test(
 
     _assert_cookie_attributes(*_headers(test_response), secure=False)
     _assert_cookie_attributes(*_headers(production_response), secure=True)
+
+
+def test_login_devuelve_los_permisos_del_rol_y_no_del_body(
+    client: TestClient,
+    seeder: Any,
+) -> None:
+    tenant_id = seeder.tenant(slug="clinica-permisos")
+    user_id = seeder.user(email="ana@example.test")
+    seeder.membership(tenant_id, user_id, "front_desk")
+
+    response = client.post(
+        LOGIN_URL,
+        json={
+            "tenant_slug": "clinica-permisos",
+            "email": "ana@example.test",
+            "password": PASSWORD,
+            # Un cliente malicioso intenta inyectar permisos: se ignora (el DTO
+            # no los declara) y la respuesta refleja la matriz del rol real.
+            "permissions": ["ownership.transfer", "chart.finalize"],
+            "roles": ["owner"],
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["roles"] == ["front_desk"]
+    assert body["permissions"] == sorted(
+        permission.value for permission in ROLE_PERMISSIONS[Role.front_desk]
+    )
+    assert "ownership.transfer" not in body["permissions"]
+    assert "chart.finalize" not in body["permissions"]

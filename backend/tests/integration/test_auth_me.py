@@ -13,6 +13,8 @@ from uuid import UUID, uuid4
 
 from app.config import Settings
 from app.core.security import ACCESS_COOKIE, REFRESH_COOKIE, create_access_token
+from app.domain.rbac.matrix import ROLE_PERMISSIONS
+from app.models.tenancy import Role
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
@@ -293,3 +295,115 @@ def test_tenant_id_en_body_es_ignorado(
     assert injected.status_code == 200
     assert injected.json()["tenant"]["id"] == str(tenant_a)
     assert injected.json()["roles"] == ["owner"]
+
+
+def _permissions_of(role: Role) -> list[str]:
+    """Permisos esperados del rol, en el orden estable de la respuesta."""
+    return sorted(permission.value for permission in ROLE_PERMISSIONS[role])
+
+
+def test_me_devuelve_los_permisos_del_rol_activo(
+    client: TestClient,
+    auth_settings: Settings,
+    seeder: Any,
+) -> None:
+    tenant_id = seeder.tenant()
+    user_id = seeder.user()
+    seeder.membership(tenant_id, user_id, "professional")
+    seeded = seeder.session(tenant_id, user_id)
+
+    _authenticated_client(
+        client,
+        auth_settings,
+        tenant_id=tenant_id,
+        user_id=user_id,
+        session_id=seeded.session_id,
+    )
+    response = client.get(ME_URL)
+
+    assert response.status_code == 200
+    permissions = response.json()["permissions"]
+    assert permissions == _permissions_of(Role.professional)
+    assert "chart.finalize" in permissions
+    assert "clinical_record.read" in permissions
+    assert "team.create" not in permissions
+    assert "ownership.transfer" not in permissions
+
+
+def test_me_recalcula_permisos_sin_relogin(
+    client: TestClient,
+    auth_settings: Settings,
+    seeder: Any,
+    db_engine: Engine,
+) -> None:
+    tenant_id = seeder.tenant()
+    user_id = seeder.user()
+    seeder.membership(tenant_id, user_id, "professional")
+    seeded = seeder.session(tenant_id, user_id)
+    _authenticated_client(
+        client,
+        auth_settings,
+        tenant_id=tenant_id,
+        user_id=user_id,
+        session_id=seeded.session_id,
+    )
+
+    before = client.get(ME_URL)
+    assert before.status_code == 200
+    assert "chart.finalize" in before.json()["permissions"]
+
+    with db_engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                UPDATE membership SET rol = 'front_desk'
+                WHERE tenant_id = :tenant_id AND user_id = :user_id
+                """
+            ),
+            {"tenant_id": tenant_id, "user_id": user_id},
+        )
+
+    after = client.get(ME_URL)
+
+    assert after.status_code == 200
+    assert after.json()["roles"] == ["front_desk"]
+    assert after.json()["permissions"] == _permissions_of(Role.front_desk)
+    assert "chart.finalize" not in after.json()["permissions"]
+    assert "chart.read" not in after.json()["permissions"]
+    assert "appointment.create" in after.json()["permissions"]
+
+
+def test_permisos_son_la_union_sin_duplicados(
+    client: TestClient,
+    auth_settings: Settings,
+    seeder: Any,
+) -> None:
+    tenant_id = seeder.tenant()
+    user_id = seeder.user()
+    seeder.membership(tenant_id, user_id, "owner")
+    seeder.membership(tenant_id, user_id, "professional")
+    seeded = seeder.session(tenant_id, user_id)
+
+    _authenticated_client(
+        client,
+        auth_settings,
+        tenant_id=tenant_id,
+        user_id=user_id,
+        session_id=seeded.session_id,
+    )
+    response = client.get(ME_URL)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert sorted(body["roles"]) == ["owner", "professional"]
+    expected = sorted(
+        {
+            permission.value
+            for role in (Role.owner, Role.professional)
+            for permission in ROLE_PERMISSIONS[role]
+        }
+    )
+    assert body["permissions"] == expected
+    assert len(body["permissions"]) == len(set(body["permissions"]))
+    # ``appointment.read`` lo dan ambos roles y aparece una sola vez.
+    assert body["permissions"].count("appointment.read") == 1

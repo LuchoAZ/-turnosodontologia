@@ -5,7 +5,8 @@ profesional y por sillón/box, historia clínica legalmente defendible, caja y f
 ARCA, con trazabilidad auditable de extremo a extremo.
 
 > Repositorio raíz de la materia **Metodología de la Investigación / Trabajo Práctico**. Desarrollado por
-> **1 desarrollador full-stack** (SU-01) con **deadline 2026-10-23** (SU-02).
+> **1 desarrollador full-stack** (SU-01). Deadline interno del Sprint 1 dev: **2026-10-23** (SU-02);
+> entrega académica del TP: **2026-11-20**.
 
 ---
 
@@ -41,9 +42,10 @@ informado, historia clínica inmutable, RBAC/privacidad y migración con dedupe.
 | CI (GitHub Actions): lint → typecheck → unit → integration → e2e → build | ✅ Verde en `main` (5/5 jobs); gate `ci (required)` versionado (marcación en GitHub documentada en `docs/foundation.md`) |
 | Change `c-01-foundation-setup` (monorepo, tests con Postgres/Redis reales, CI) | ✅ **Archivado** — 32/32 tasks |
 | Change `c-02-core-models-tenancy` (modelo base, RLS fail-closed, seed de catálogos) | ✅ **Archivado** — 22/22 tasks, gate RN-TEN-02 con prueba de mutación (`docs/core-tenancy.md`) |
-| Change `c-03-auth-sessions` (sesión httpOnly, login, MFA, reset, switch-tenant, guardas + e2e) | 🟡 Implementado y verificado (193 tests backend, 22 unit frontend, 6 e2e Playwright) — pendiente de archive |
+| Change `c-03-auth-sessions` (sesión httpOnly, login, MFA, reset, switch-tenant, guardas + e2e) | ✅ **Archivado 2026-11-10** — 54/54 tasks (`docs/auth.md`, `openspec/specs/platform-auth/`) |
+| Change `c-04-rbac-permissions` (matriz de 57 permisos, guardas, equipo, auditoría, RLS) | 🟡 Implementado y verificado (49/49 tasks; 334 tests backend, 43 unit frontend, 11 e2e) — pendiente de archive |
 | Skill propia `spec-scenario-review` + MCP `context7` | ✅ Integrados con evidencia (`docs/skills-mcp/`) |
-| **Change `agendar-turno-sin-solapamiento` (ENTREGABLE TP)** | 🟡 **Spec lista (`LISTO PARA APLICAR`)** — 6 requisitos, 24 escenarios; implementación pendiente de C-03/C-05/C-06 |
+| **Change `agendar-turno-sin-solapamiento` (ENTREGABLE TP)** | 🟡 **Spec lista (`LISTO PARA APLICAR`)** — 6 requisitos, 24 escenarios; implementación pendiente de C-05/C-06 |
 
 **Entregable del TP (META)**: el change `agendar-turno-sin-solapamiento` — crear un turno evitando
 solapamientos por profesional y por sillón/box, con reglas de negocio verificables (RN-AG-01/02/03/09/10),
@@ -52,13 +54,18 @@ API + formulario mínimo y evidencia de tests de punta a punta.
 ### Ruta del Sprint 1 dev
 
 ```
-C-01 foundation-setup  ✅ archivado   monorepo + tests con Postgres/Redis reales + CI
+C-01 foundation-setup     ✅ archivado   monorepo + tests con Postgres/Redis reales + CI
   → C-02 core-models-tenancy  ✅ archivado   modelos SQLAlchemy + RLS fail-closed + seed
-  → C-03 auth-sessions             sesión httpOnly + tenant del token
+  → C-03 auth-sessions        ✅ archivado   sesión httpOnly + MFA + tenant del token
+  → C-04 rbac-permissions     🟡 verificado  matriz de permisos + equipo + auditoría (pendiente de archive)
   → C-05 clinic-setup              profesionales, sillones y reglas de duración
   → C-06 patients                  pacientes
   → ★ agendar-turno-sin-solapamiento   ENTREGABLE — crear turno sin solapamientos
 ```
+
+C-04 no figuraba en el Sprint 1 original: se adelantó porque la rúbrica del TP exige el criterio de
+**autenticación y permisos** con acceso autorizado y rechazo de accesos inválidos, y porque la agenda
+necesita la frontera de permisos ya cerrada.
 
 ## 3. Stack tecnológico
 
@@ -97,14 +104,15 @@ TypeScript). **Vertical slices** (cada change entrega API + UI de su capacidad),
 ├── knowledge-base/              # Documentación de dominio (fuente de verdad)
 ├── openspec/
 │   ├── changes/                 # Changes activos (proposal/design/tasks/specs)
-│   │   ├── c-01-foundation-setup/
-│   │   └── agendar-turno-sin-solapamiento/
-│   └── specs/                   # Specs de capacidades (tras archive)
+│   │   ├── c-04-rbac-permissions/
+│   │   ├── agendar-turno-sin-solapamiento/
+│   │   └── archive/             # c-01, c-02 y c-03 archivados
+│   └── specs/                   # Specs de capacidades (tras archive): platform-runtime, platform-tenancy, platform-auth
 ├── .agents/skills/              # Skills vendorizadas (metodología + dominio + `spec-scenario-review`)
 ├── .atl/                        # Skill registry (.atl/skill-registry.md)
 ├── .opencode/skills/            # Skills OPSX (openspec-*)
 ├── .github/workflows/           # CI (GitHub Actions)
-├── docs/                        # foundation.md, core-tenancy.md, skills-mcp/, entrega/
+├── docs/                        # foundation.md, core-tenancy.md, auth.md, rbac.md, skills-mcp/, entrega/
 ├── backend/                     # FastAPI: app/, alembic/, tests/
 ├── frontend/                    # React + Vite: src/{routes,features,shared,api}
 ├── docker-compose.yml           # Postgres 16 + Redis 7 + backend + worker + frontend
@@ -165,6 +173,10 @@ npm run test:e2e           # e2e (Playwright) contra backend real (Testcontainer
 # Si 5173 está ocupado (p. ej. por Docker Desktop): E2E_WEB_PORT=5180 npm run test:e2e
 ```
 
+Última corrida completa (2026-11-11, `main`): **334 tests backend** (`ruff` limpio, `mypy app` 52
+archivos), **43 unit frontend** (`tsc -b` limpio, `eslint` 0 errores) y **11 e2e Playwright** en verde.
+El detalle por capa está en `docs/auth.md` § 13 y `docs/rbac.md` § 10.
+
 **CI (GitHub Actions)**: `lint → typecheck → unit → integration → e2e → build` por app; todos los jobs
 bloquean el merge. **Gate de merge obligatorio**: todo change que toque una tabla con `tenant_id` debe
 pasar el test de aislamiento cross-tenant (RN-TEN-02).
@@ -186,6 +198,8 @@ Evidencia de uso real:
   (6 requisitos, 24 escenarios, 24/24 con tarea).
 - `docs/skills-mcp/evidencias/revision-c-02.md` → `LISTO PARA APLICAR`, con el hueco **RN-TEN-04**
   detectado por la skill y cerrado en C-02 (índice parcial + RED verificado).
+- `docs/skills-mcp/evidencias/revision-c-04.md` → 1.ª pasada `FALTAN ESCENARIOS`; `…-r2`, `…-r3` y
+  `…-r4` documentan el ciclo hasta `LISTO PARA APLICAR` (12 requisitos, 61 escenarios, 49 tareas).
 - `docs/skills-mcp/aplicacion.md` → informe de aplicación completo y revisión crítica.
 
 **MCP `context7`** (documentación actualizada del stack). Configuración reproducible, en la
@@ -241,11 +255,13 @@ Extraídas de `AGENTS.md` — las lee todo agente antes de tocar código:
 | `docs/foundation.md` | Cómo correr, sondas de salud, variables de entorno y CI/branch protection |
 | `docs/core-tenancy.md` | Modelo base, políticas RLS, rol de app, seed y prueba de mutación |
 | `docs/auth.md` | Sesión httpOnly, contrato de los 10 endpoints de auth, lockout, MFA, reset, switch-tenant, proxy de Vite y orquestación del e2e (con salidas reales) |
+| `docs/rbac.md` | Matriz de 57 permisos, `SessionOut.permissions[]`, guarda `require_permission`, contrato de los 5 endpoints de equipo, transferencia de ownership, auditoría, pantalla de Equipo y gate cross-tenant |
 | `docs/skills-mcp/investigacion.md` | Ficha de investigación: skill propia + comparación y elección de MCP |
 | `docs/skills-mcp/aplicacion.md` | Informe de aplicación, evidencias y revisión crítica |
 | `docs/skills-mcp/evidencias/revision-agendar-turno.md` | Revisión `FALTAN ESCENARIOS` del entregable (6 huecos) |
 | `docs/skills-mcp/evidencias/revision-agendar-turno-post-fix.md` | Re-revisión y veredicto final `LISTO PARA APLICAR` (24/24 escenarios con tarea) |
 | `docs/skills-mcp/evidencias/revision-c-02.md` | Revisión `LISTO PARA APLICAR` de C-02 (RN-TEN-04 cerrado) |
+| `docs/skills-mcp/evidencias/revision-c-04*.md` | Ciclo de revisión de C-04: `FALTAN ESCENARIOS` → `r4 LISTO PARA APLICAR` |
 | `docs/entrega/guion-video.md` | Guion del video de defensa (9–10 min, con comandos y tomas de respaldo) |
 | `docs/entrega/resumen-entrega.txt` | Resumen ejecutivo de la entrega y checklist de evidencias |
 | `discovery/discovery.md` | Recomendación final (Sección D del TP): 5 competidores para demo, 3 referencias UX, MVP sugerido |

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+﻿import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -16,6 +16,7 @@ const SESSION: SessionOut = {
   user: { id: 'u-1', email: 'demo@example.test', nombre: 'Demo', apellido: 'Pérez' },
   tenant: { id: 't-1', slug: 'clinica-demo', nombre_comercial: 'Clínica Demo' },
   roles: ['professional'],
+  permissions: [],
   mfa_enrolled: true,
 }
 

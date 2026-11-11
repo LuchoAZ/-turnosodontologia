@@ -81,12 +81,14 @@ def test_session_out_never_serializes_tokens() -> None:
         user=UserOut(id=uuid4(), email="demo@example.test", nombre="Demo", apellido="User"),
         tenant=TenantOut(id=uuid4(), slug="clinica-demo", nombre_comercial="Clínica Demo"),
         roles=["professional"],
+        permissions=["chart.finalize", "clinical_record.read"],
         mfa_enrolled=False,
     )
 
     serialized = response.model_dump_json()
     for forbidden in ("password_hash", "mfa_secret", "refresh_token", "access_token", "token"):
         assert forbidden not in serialized
+    assert response.permissions == ["chart.finalize", "clinical_record.read"]
 
 
 def test_login_request_requires_tenant_email_and_password() -> None:

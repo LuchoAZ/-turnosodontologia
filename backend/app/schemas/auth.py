@@ -37,11 +37,17 @@ class TenantOut(BaseModel):
 
 
 class SessionOut(BaseModel):
-    """Respuesta de ``/auth/me`` y del login: perfil, tenant y roles."""
+    """Respuesta de ``/auth/me``, login y refresh: perfil, tenant, roles y permisos.
+
+    ``permissions`` es la unión de permisos de las memberships activas en el
+    tenant de la sesión (``resolve_permissions``), en orden alfabético estable.
+    El cliente decide la UI por permiso; nunca compara roles.
+    """
 
     user: UserOut
     tenant: TenantOut
     roles: list[str]
+    permissions: list[str]
     mfa_enrolled: bool
 
 

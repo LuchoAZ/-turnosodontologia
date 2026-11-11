@@ -35,6 +35,12 @@ def create_db_engine(settings: Settings) -> Engine:
             cursor.execute(f"SET ROLE {APP_ROLE}")
         finally:
             cursor.close()
+        # ``SET ROLE`` es transaccional: si queda en la transacción implícita que
+        # abrió el ``execute``, el primer ``ROLLBACK`` de SQLAlchemy lo revierte y
+        # la conexión vuelve al rol de login (superusuario del contenedor), que
+        # ignora RLS incluso con ``FORCE``. El ``commit`` lo hace durable para
+        # toda la vida de la conexión; el ``ROLLBACK`` de checkin ya no lo toca.
+        dbapi_connection.commit()
 
     return engine
 

@@ -14,14 +14,18 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
 from app.api.v1.auth.router import router as auth_router
+from app.api.v1.clinical.router import router as clinical_router
+from app.api.v1.team.router import router as team_router
 from app.config import Settings, format_config_error, load_config
 from app.db.engine import create_db_engine, create_session_factory
 from app.db.redis import create_redis_client
 from app.domain.auth.errors import AuthError
+from app.domain.rbac.errors import RbacError, invalid_request
 from app.infra.observability import setup_observability
 from app.infra.routers.health import router as health_router
 from app.infra.routers.ready import router as ready_router
@@ -58,9 +62,22 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             headers=exc.headers(),
         )
 
+    @application.exception_handler(RbacError)
+    async def _rbac_error_handler(_: Request, exc: RbacError) -> JSONResponse:
+        return JSONResponse(status_code=exc.status_code, content=exc.to_payload())
+
+    @application.exception_handler(RequestValidationError)
+    async def _validation_error_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
+        # Un solo contrato de 422 en toda la API: ``invalid_request``, nunca el
+        # ``detail`` de FastAPI (que ecoa el valor recibido y campos internos).
+        error = invalid_request()
+        return JSONResponse(status_code=error.status_code, content=error.to_payload())
+
     application.include_router(health_router)
     application.include_router(ready_router)
     application.include_router(auth_router)
+    application.include_router(clinical_router)
+    application.include_router(team_router)
     return application
 
 

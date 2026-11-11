@@ -92,7 +92,9 @@ Prefijo: `/api/v1/auth`. El contrato formal es el OpenAPI de FastAPI (`app/schem
 | 9 | `POST /forgot-password` | `{email}` | `202` **siempre** (sin `token` en `production`) | — (nunca revela si el email existe) |
 | 10 | `POST /reset-password` | `{token, new_password}` | `200 {"status":"ok"}` | `400 invalid_or_expired_token` |
 
-`SessionOut` = `{user:{id,email,nombre,apellido}, tenant:{id,slug,nombre_comercial}, roles[], mfa_enrolled}`.
+`SessionOut` = `{user:{id,email,nombre,apellido}, tenant:{id,slug,nombre_comercial}, roles[], permissions[], mfa_enrolled}`.
+`permissions[]` son los permisos efectivos de la sesión (C-04), en orden alfabético; la UI decide
+visibilidad por permiso y nunca comparando `roles` (ver `docs/rbac.md` § 3).
 Los DTOs son lista blanca: nunca sale `password_hash`, `mfa_secret` ni ningún token.
 
 ### 3.1 Catálogo de `code` (design D9)
@@ -111,6 +113,7 @@ es solo para el usuario.
 | `mfa_required` | 403 | Falta step-up para esta operación/rol |
 | `mfa_enrollment_required` | 403 | El rol exige enrolar TOTP |
 | `mfa_unavailable` | 503 | No se pudo evaluar el segundo factor |
+| `forbidden` | 403 | La sesión no tiene el permiso que exige el endpoint (guarda `require_permission` de C-04; ver `docs/rbac.md` § 4) |
 | `tenant_not_available` | 403 | Tenant inexistente, suspendido o sin membership activa |
 | `locked` | 423 | Cuenta bloqueada temporalmente (+ `Retry-After`) |
 | `refresh_reuse` | 401 | Refresh ya rotado: familia revocada |
@@ -283,7 +286,12 @@ $ curl -s -X POST http://127.0.0.1:5180/api/v1/auth/login \
     -d '{"tenant_slug":"clinica-demo","email":"demo@example.test","password":"demo-password-123"}'
 {"user":{"id":"788a26c7-…","email":"demo@example.test","nombre":"Demo","apellido":"Pérez"},
  "tenant":{"id":"5c2515d7-…","slug":"clinica-demo","nombre_comercial":"Clínica Demo"},
- "roles":["professional"],"mfa_enrolled":false}
+ "roles":["professional"],
+ "permissions":["appointment.read","chair.read","chart.create","chart.finalize","chart.read",
+                "chart.update","clinical_record.create","clinical_record.read",
+                "clinical_record.update","consent.create","consent.read","professional.read",
+                "report_usage.read","settlement.read_own","tenant_settings.read"],
+ "mfa_enrolled":false}
 # Set-Cookie: odontologia_access=…; HttpOnly; Path=/; SameSite=Lax
 ```
 
@@ -374,17 +382,18 @@ Casos (todos ejecutados, ninguno *skipped*):
 
 ## 13. Salida real del pipeline
 
-Ejecutado el **2026-11-10** en `main` (Docker Desktop activo):
+Ejecutado el **2026-11-10** en `main` (Docker Desktop activo). Números actualizados tras C-04
+(`c-04-rbac-permissions`); el detalle por capa está en `docs/rbac.md` § 10.3.
 
 ```
-$ cd backend && uv run ruff check .
+$ cd backend && uv run ruff check app tests alembic
 All checks passed!
 
 $ cd backend && uv run mypy app
-Success: no issues found in 41 source files
+Success: no issues found in 52 source files
 
 $ cd backend && uv run pytest -q
-193 passed, 1 warning in 110.73s (0:01:50)
+334 passed, 1 warning in 51.31s
 
 $ cd frontend && npm run lint
 ✖ 1 problem (0 errors, 1 warning)      # react-refresh/only-export-components en button.tsx (preexistente)
@@ -393,20 +402,21 @@ $ cd frontend && npm run typecheck
 > tsc -b                               # sin salida = sin errores
 
 $ cd frontend && npm run test
- Test Files  4 passed (4)
-      Tests  22 passed (22)
+ Test Files  8 passed (8)
+      Tests  43 passed (43)
 
 $ cd frontend && E2E_WEB_PORT=5180 npm run test:e2e
 [WebServer] [e2e] cuenta lista: clinica-demo / demo@example.test
 [WebServer] [e2e] uvicorn en http://127.0.0.1:8000
-Running 6 tests using 6 workers
+Running 11 tests using 7 workers
   ok 2 [chromium] › tests\e2e\auth.spec.ts:20:1 › sin sesión, la raíz redirige a /login (1.9s)
   ok 3 [chromium] › tests\e2e\smoke.spec.ts:3:1 › sin sesión, la raíz muestra el login (2.0s)
   ok 6 [chromium] › tests\e2e\smoke.spec.ts:10:1 › con sesión, la raíz muestra la home (2.4s)
   ok 4 [chromium] › tests\e2e\auth.spec.ts:36:1 › login válido llega a la home con el tenant de la sesión (2.5s)
   ok 1 [chromium] › tests\e2e\auth.spec.ts:27:1 › credenciales inválidas muestran el error del catálogo (2.6s)
   ok 5 [chromium] › tests\e2e\auth.spec.ts:46:1 › logout vuelve a /login y una recarga no restaura la sesión (2.6s)
-  6 passed (15.7s)
+  ok 7..11 team.spec.ts (5 tests de permisos de equipo, ver docs/rbac.md § 10.2)
+  11 passed (12.6s)
 ```
 
 Los 4 casos de `auth.spec.ts` cubren el criterio “autenticación y permisos” con navegador real:
