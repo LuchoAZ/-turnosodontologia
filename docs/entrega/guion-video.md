@@ -10,15 +10,42 @@
 
 ## Antes de grabar (checklist)
 
-- [ ] Docker Desktop corriendo (los tests de integración usan Testcontainers).
+- [ ] Docker Desktop corriendo (Testcontainers levanta Postgres 16 + Redis 7).
 - [ ] Terminal en la raíz del repo: `C:\Users\L\Desktop\Tpi Metodologia`.
-- [ ] `cd backend` y `uv sync` ya ejecutados (sin descargas en el video).
-- [ ] Zoom de terminal al 120 % y fuente legible.
-- [ ] Cerrar pestañas con datos personales o secretos (`.env` **no** se muestra).
-- [ ] Tener a mano: `README.md`, `docs/skills-mcp/aplicacion.md`,
-      `docs/skills-mcp/evidencias/revision-c-02.md`, `docs/skills-mcp/evidencias/revision-agendar-turno.md`,
+- [ ] `cd backend` y `uv sync` ya ejecutados; `cd ../frontend` y `npm install` ya ejecutados.
+- [ ] **Demo ya ensayada**: backend y frontend levantados con los dos comandos del bloque 0.
+- [ ] Zoom de terminal al 120 % y fuente legible; navegador sin pestañas personales.
+- [ ] `.env` **no** se muestra: los comandos usan las variables del seed de e2e, sin secretos.
+- [ ] Tener a mano: `README.md`, `docs/appointments.md`, `docs/skills-mcp/aplicacion.md`,
+      `docs/skills-mcp/evidencias/revision-agendar-turno.md`,
       `docs/skills-mcp/evidencias/revision-agendar-turno-post-fix.md`,
-      `openspec/specs/platform-tenancy/spec.md`, `backend/tests/integration/test_core_tenancy_migration.py`.
+      `docs/skills-mcp/evidencias/revision-agendar-turno-pre-archive.md`,
+      `docs/skills-mcp/evidencias/gate-rls-agenda.md`,
+      `openspec/specs/agenda/appointments/spec.md`.
+
+### Bloque 0 — Preparar la demo (fuera del video)
+
+Dos terminales, ambas con Docker arriba:
+
+```powershell
+# Terminal 1 — backend real: Postgres 16 + Redis 7 por Testcontainers, Alembic head, seed de demo
+cd backend
+uv run python scripts/e2e_server.py
+# imprime: [e2e] cuenta lista: clinica-demo / demo@example.test
+#          [e2e] uvicorn en http://127.0.0.1:8000
+
+# Terminal 2 — SPA
+cd frontend
+npm run dev            # http://127.0.0.1:5173
+```
+
+Cuentas sembradas (contraseña `demo-password-123`):
+
+| Cuenta | Rol | Para qué en el video |
+|---|---|---|
+| `desk@example.test` | `front_desk` | agenda el turno (tiene `appointment.create`) |
+| `demo@example.test` | `owner` | opcional: mostrar la home completa |
+| `ajeno@example.test` | `professional` (tenant B) | el `403` de RBAC |
 
 ---
 
@@ -29,38 +56,42 @@
 > "Este es el TPI de Metodología I: un SaaS multi-tenant de gestión para clínicas odontológicas PyME
 > de Argentina. El riesgo dominante no es funcional, es de seguridad: un solo leak cross-tenant
 > destruye la confianza de todas las clínicas. Por eso el proyecto usa Spec-Driven Development y el
-> aislamiento por tenant es un gate de merge, no una tarea opcional. La entrega tiene dos changes
-> archivados —C-01 foundation y C-02 core models + tenancy— más una skill propia y el MCP context7
+> aislamiento por tenant es un gate de merge, no una tarea opcional. La entrega tiene siete changes
+> archivados —los seis de la base más el entregable de agenda—, una skill propia y el MCP context7
 > aplicados sobre trabajo real."
 
-**Mostrar**: `README.md`, sección 1 y la tabla de estado (líneas 38–45).
+**Mostrar**: `README.md`, sección 1 y la tabla de estado.
 
 ---
 
-## Bloque 2 — Estado del proyecto y changes archivados (0:50–2:10)
+## Bloque 2 — Estado del proyecto: los 4 gates (0:50–2:00)
 
 **Ejecutar**:
 
 ```powershell
-openspec list
+openspec list                              # sin changes activos: los 7 están archivados
 Get-ChildItem openspec\changes\archive -Directory -Name
 Get-ChildItem openspec\specs -Recurse -File -Name
+openspec validate --archived --strict      # 7 passed, 0 failed
+openspec validate --specs --strict         # 8 passed, 0 failed
 ```
 
 **Decir**:
 
-> "OpenSpec es la fuente de verdad del estado. Hay dos changes archivados: C-01, que dejó el monorepo,
-> los tests con Postgres y Redis reales y el CI; y C-02, que dejó las seis tablas base, RLS fail-closed,
-> el seed de catálogos y el gate RN-TEN-02. Las specs principales quedaron en `platform-runtime` y
-> `platform-tenancy`. El change de agenda sigue activo porque es el entregable y todavía no se
-> implementó."
+> "OpenSpec es la fuente de verdad del estado. No queda ningún change activo: los siete se
+> archivaron con los cuatro gates que pide la cátedra —propuesto, aplicado, verificado y archivado—.
+> C-01 dejó el monorepo, los tests con Postgres y Redis reales y el CI; C-02 las seis tablas base con
+> RLS fail-closed y el gate RN-TEN-02; C-03 la sesión httpOnly con MFA; C-04 la matriz RBAC de 19
+> recursos y 61 permisos; C-05 sillones, profesionales y disponibilidad; C-06 la ficha de pacientes
+> con historia clínica numerada; y el séptimo es el entregable: alta de turno sin solapamientos.
+> Cada uno dejó su spec principal, que es lo que se está validando acá."
 
-**Mostrar**: `openspec/specs/platform-tenancy/spec.md` — 7 requisitos, 25 escenarios. Bajar hasta el
-requisito de RN-TEN-04 y leer los tres escenarios en voz alta.
+**Mostrar**: `openspec/specs/agenda/appointments/spec.md` — 6 requisitos, 26 escenarios. Bajar hasta
+el requisito de solapamiento y leer el escenario de concurrencia.
 
 ---
 
-## Bloque 3 — La skill propia: qué es y qué encontró (2:10–4:40)
+## Bloque 3 — La skill propia: qué es y qué encontró (2:00–4:00)
 
 **Mostrar**: `.agents/skills/spec-scenario-review/SKILL.md` (frontmatter + procedimiento).
 
@@ -71,7 +102,7 @@ requisito de RN-TEN-04 y leer los tres escenarios en voz alta.
 > de negocio y caso borde. Además cruza las reglas RN-XX contra la knowledge base y bloquea si falta
 > el check de tenancy. El veredicto es uno de tres: listo para aplicar, faltan escenarios o bloqueado."
 
-### 3.1 Evidencia sobre el entregable: el ciclo completo (2:40–3:40)
+### 3.1 El ciclo completo sobre el entregable (2:30–3:30)
 
 **Abrir**: `docs/skills-mcp/evidencias/revision-agendar-turno.md`.
 
@@ -80,52 +111,43 @@ requisito de RN-TEN-04 y leer los tres escenarios en voz alta.
 > "La corrí sobre el change de agenda antes de implementarlo. Veredicto: faltan escenarios. Detectó
 > seis huecos, por ejemplo: qué pasa si el profesional está inactivo, si el turno nuevo empieza
 > exactamente cuando termina otro, si la fecha llega sin offset de zona, o si el payload trae un
-> `tenant_id` de otra clínica. Ninguno es teórico: cada uno define un contrato de error. La revisión de
-> tenancy dio completa, así que no hay bloqueante de seguridad; el veredicto es por escenarios."
-
-**Mostrar**: la tabla de cobertura y los seis huecos. No hace falta leerlos todos.
+> `tenant_id` de otra clínica. Ninguno es teórico: cada uno define un contrato de error."
 
 **Cambiar a**: `docs/skills-mcp/evidencias/revision-agendar-turno-post-fix.md`.
 
 **Decir**:
 
-> "Corregimos los seis huecos y volvimos a pasar la skill. Y acá está el valor real del gate: la
-> segunda pasada encontró dos defectos que la primera no vio. El payload aceptaba `fin` y además el
-> servidor lo derivaba — dos fuentes de verdad para el mismo dato — y el `401` estaba en la spec pero
-> no tenía ninguna tarea que lo verificara. La tercera pasada, ya sin defectos, dio listo para aplicar
-> con seis requisitos, veinticuatro escenarios y veinticuatro de veinticuatro con tarea de
-> verificación. El ciclo es visible en el historial del propio archivo: faltan escenarios, corrección,
-> listo para aplicar."
+> "Corregimos los seis huecos y volvimos a pasar la skill. La segunda pasada encontró dos defectos que
+> la primera no vio: el payload aceptaba `fin` y además el servidor lo derivaba —dos fuentes de verdad
+> para el mismo dato— y el `401` estaba en la spec pero no tenía tarea que lo verificara. La tercera
+> pasada dio listo para aplicar con seis requisitos, veinticuatro escenarios y veinticuatro de
+> veinticuatro con tarea."
 
-**Mostrar**: la tabla "Historial de la revisión" al inicio de la evidencia y el veredicto final.
+**Cambiar a**: `docs/skills-mcp/evidencias/revision-agendar-turno-pre-archive.md`.
 
-### 3.2 Evidencia sobre C-02: el hueco que encontró (3:40–4:40)
+**Decir**:
+
+> "Y acá está lo que más me sirvió: volví a correr la misma skill sobre el change ya implementado,
+> como gate previo al archivado. Encontró cinco defectos de redacción que se habrían congelado en la
+> spec principal: un escenario que pedía un `201` imposible porque la regla dura de la base lo
+> rechaza, el tipo de rango que Postgres no acepta en un índice, un borde de buffers que estaba
+> implementado pero no declarado, el `403` de permisos que faltaba y una guarda defensiva que había
+> que anotar. Quedó listo para archivar con veintiséis escenarios, veintiséis con test. Y no cambió
+> una línea de código: la implementación ya era correcta, lo que estaba mal era la spec."
+
+### 3.2 El hueco de negocio que encontró en C-02 (3:30–4:00)
 
 **Abrir**: `docs/skills-mcp/evidencias/revision-c-02.md`.
 
 **Decir**:
 
-> "En C-02 la skill encontró un hueco real que el proposal no había cubierto: la regla RN-TEN-04 de la
-> knowledge base dice que un tenant tiene exactamente un owner activo, y `membership` es de este
-> change. La spec no lo cubría. Sin la skill, el hueco aparecía en C-04 o en producción, con dos
-> personas creyendo que administran la misma clínica. Lo cerramos con un requisito, tres escenarios y
-> un índice único parcial sobre `tenant_id` donde el rol es owner y está activo."
-
-**Mostrar en el editor**:
-
-- `backend/app/models/tenancy.py` → bloque `uq_membership_owner_activo`.
-- `backend/alembic/versions/002_core_tenancy.py` → el `op.create_index` con
-  `postgresql_where=sa.text("rol = 'owner' AND activo")`.
-
-**Decir**:
-
-> "Y no nos quedamos con que el test pase: verificamos el RED. Sacamos el índice de la migración y el
-> test falló con `DID NOT RAISE IntegrityError`; lo restauramos y volvió a verde. Eso es lo que
-> convierte la regla en una garantía verificable."
+> "En C-02 encontró un hueco que el proposal no cubría: RN-TEN-04 dice que un tenant tiene exactamente
+> un owner activo, y `membership` es de ese change. Lo cerramos con un requisito, tres escenarios y un
+> índice único parcial. Y verificamos el RED: sin el índice el test falla; con el índice, verde."
 
 ---
 
-## Bloque 4 — El MCP context7 y la corrección concreta (4:40–6:20)
+## Bloque 4 — El MCP context7 y la corrección concreta (4:00–5:00)
 
 **Mostrar**: `README.md` sección 5.4 (configuración reproducible) y
 `docs/skills-mcp/investigacion.md` (tabla de consultas).
@@ -133,10 +155,9 @@ requisito de RN-TEN-04 y leer los tres escenarios en voz alta.
 **Decir**:
 
 > "El MCP elegido es context7, un servidor remoto de documentación actualizada del stack. Se compara
-> con Playwright MCP en la ficha: context7 aporta directo a C-02 porque el change se define por SQL de
-> PostgreSQL y por el manejo de la sesión en SQLAlchemy; Playwright se vuelve útil recién con la UI de
-> agenda. Es remoto, no requiere instalación y es de solo lectura: el límite de acceso es documentación
-> pública."
+> con Playwright MCP en la ficha: context7 aporta directo al SQL de PostgreSQL y al manejo de la
+> sesión en SQLAlchemy; Playwright se usa como herramienta de test, no como MCP. Es remoto, no
+> requiere instalación y es de solo lectura."
 
 **Demo en vivo (si la sesión lo permite)**: pedir al agente:
 
@@ -148,65 +169,141 @@ requisito de RN-TEN-04 y leer los tres escenarios en voz alta.
 **Decir**:
 
 > "La corrección concreta fue esta. El primer diseño usaba `SET LOCAL app.current_tenant = :tenant_id`.
-> La documentación mostró que `SET` no acepta parámetros bindeados: o interpolás el UUID, con riesgo de
-> inyección y quoting, o usás `set_config`, que sí acepta el parámetro. La versión final es
+> La documentación mostró que `SET` no acepta parámetros bindeados: o interpolás el UUID, con riesgo
+> de inyección y quoting, o usás `set_config`, que sí acepta el parámetro. La versión final es
 > `SELECT set_config('app.current_tenant', :tenant_id, true)`. El tercer argumento `true` es
 > transaction-local: al commit o rollback la conexión vuelve al pool sin contexto. Sin ese `true`, el
-> valor sobrevive al commit y se filtra a la siguiente request que reutilice la conexión."
-
-**Si no hay demo en vivo**: mostrar la tabla de consultas de `investigacion.md` y el código final.
+> valor sobrevive y se filtra a la siguiente request."
 
 ---
 
-## Bloque 5 — El gate de tenancy y la suite (6:20–8:30)
+## Bloque 5 — Los cinco criterios, en vivo (5:00–7:50)
 
-**Abrir**: `backend/tests/integration/test_core_tenancy_migration.py`.
+### 5.1 Fundación ejecutable (5:00–5:20)
+
+```powershell
+curl.exe -s http://127.0.0.1:8000/health
+curl.exe -s http://127.0.0.1:8000/ready
+```
+
+**Decir**:
+
+> "Criterio uno: el sistema levanta. Liveness y readiness contra Postgres real. El CI corre lint,
+> typecheck, unit, integration, e2e y build para las dos apps, y todos los jobs bloquean el merge."
+
+### 5.2 Modelos y persistencia (5:20–5:50)
+
+**En el navegador**: login `demo@example.test` → `/clinica` y `/pacientes`.
+
+**Decir**:
+
+> "Criterio dos: los modelos están persistidos y verificados. Acá se ven los sillones, profesionales y
+> reglas de disponibilidad, y las fichas de pacientes con historia clínica numerada. Son tablas con
+> `tenant_id`, RLS forzada y una migración reversible cada una; el gate de aislamiento se prueba con
+> mutación, no con un `WHERE`."
+
+### 5.3 Autenticación y permisos (5:50–6:20)
+
+**En el navegador**: login `desk@example.test` (recepción) → la home muestra los enlaces según
+permisos. Después, en una pestaña incógnita, `http://127.0.0.1:5173/turnos/nuevo` sin sesión →
+redirige al login.
+
+**Decir**:
+
+> "Criterio tres: la sesión vive en cookies httpOnly con access y refresh rotativo, y los permisos
+> salen de la sesión, no del cliente. Si el rol no tiene `appointment.create`, la ruta no se renderiza
+> y la API responde `403`: eso lo verifica el e2e, no solo el unitario."
+
+### 5.4 Agenda y turnos — el entregable (6:20–7:30)
+
+**En el navegador**, como `desk@example.test`:
+
+1. Home → **Agendar turno** → `/turnos/nuevo`.
+2. Elegir profesional (`Profesional, Paula`, matrícula `MP-DEMO-1`), sillón (`Sillón demo`), paciente
+   (`E2E-Paciente, Demo`), fecha y hora **09:00** → **Guardar turno**.
+3. Mostrar la confirmación: **09:00 a 09:30 · 30 min · pendiente**. Sin regla de disponibilidad, la
+   duración sale del profesional; el cliente no mandó `fin` ni `duracion_min`.
+4. Cargar otro turno el mismo día a las **09:15** → **Guardar turno**.
+5. Mostrar el `409`: `turno_solapado`, *recurso en conflicto: profesional*, rango `09:00–09:30`, con
+   los datos cargados conservados.
+
+**Decir**:
+
+> "Criterio cuatro, y el entregable: crear un turno sin solapamientos. El formulario manda solo
+> profesional, sillón, paciente e inicio con offset; el servidor deriva el fin, la duración y los
+> buffers. El segundo intento a las nueve y cuarto devuelve `409` con el recurso y el rango del turno
+> que ganó, no un error genérico. Esto no lo decide solo la aplicación: la base tiene un `EXCLUDE
+> USING gist` por profesional y por sillón sobre el rango bloqueado, así que ni una carrera entre dos
+> requests puede crear el doble booking. Además RN-AG-10 se evalúa antes: si el mismo paciente choca
+> contra el mismo profesional, el mensaje es 'el paciente ya tiene un turno', que es lo accionable."
+
+**Mostrar en el editor**: `backend/alembic/versions/007_agenda.py`, el bloque del `EXCLUDE`, y
+`backend/app/domain/agenda/appointments/service.py`, el orden de validaciones.
+
+### 5.5 Frontend integrado (7:30–7:50)
+
+```powershell
+cd frontend
+$env:E2E_WEB_PORT='5180'; npx playwright test
+```
+
+**Decir**:
+
+> "Criterio cinco: esto que acabamos de hacer a mano corre solo, cinco escenarios de punta a punta
+> contra el backend real —alta con duración derivada, solape visible, precedencia de RN-AG-10, `403`
+> sin permiso y `404` de recurso inexistente—, dentro de una suite de 24 e2e. El frontend no tiene
+> mocks: pega contra FastAPI, Postgres con RLS y el `EXCLUDE`."
+
+---
+
+## Bloque 6 — El gate de tenancy y la suite (7:50–9:10)
+
+**Abrir**: `docs/skills-mcp/evidencias/gate-rls-agenda.md`.
 
 **Decir**:
 
 > "El gate RN-TEN-02 no es un test más. Los tests de RLS hacen `SET ROLE odontologia_app` antes de
-> consultar porque el usuario del contenedor es superusuario y un superusuario ignora Row Level
-> Security: sin ese `SET ROLE`, el verde sería falso. La prueba de mutación corre el mismo `SELECT`
-> como owner y como rol de app: como owner ve filas de A y de B; como app ve solo A. Eso demuestra que
-> el filtro lo hace la política, no un `WHERE` accidental."
-
-**Mostrar**: `test_mutacion_sin_rls_el_mismo_query_filtraria` y el test de
-`test_el_contexto_de_tenant_no_se_filtra_entre_transacciones_del_pool`.
+> consultar, porque el usuario del contenedor es superusuario y un superusuario ignora Row Level
+> Security: sin ese `SET ROLE`, el verde sería falso. Y la evidencia incluye la prueba de mutación:
+> apagué RLS y quité los cinco filtros de tenant del servicio, y la suite se puso roja —cinco fallos y
+> el caso del profesional ajeno creando el turno, `assert 201 == 404`—; restaurado, vuelve a ocho en
+> verde. Eso demuestra que el aislamiento no es accidental."
 
 **Ejecutar**:
 
 ```powershell
 cd backend
-uv run ruff check .
+uv run ruff check app tests
 uv run mypy app
-uv run pytest tests/integration/test_core_tenancy_migration.py -q
 uv run pytest -q
 ```
 
 **Decir mientras corre**:
 
-> "Ruff y mypy en cero. El gate de tenancy en verde y la suite completa en 56 tests, 17 de integración
-> con Postgres 16 real. Ninguno skippeado: Docker está arriba."
-
-**Mostrar**: `56 passed` y el `openspec validate --archived --strict` con los dos changes válidos.
+> "Ruff limpio, mypy limpio en setenta y nueve archivos y la suite completa: seiscientos noventa y
+> cinco tests, con Postgres 16 y Redis reales, ninguno skippeado. Sumando el frontend, ciento
+> veintiocho unitarios y veinticuatro e2e."
 
 ---
 
-## Bloque 6 — Revisión crítica y cierre (8:30–9:40)
+## Bloque 7 — Revisión crítica y cierre (9:10–10:00)
 
 **Decir**:
 
-> "Qué funcionó: la skill encontró un hueco de negocio que el autor del proposal no vio y frenó el
-> change de agenda antes de codear seis contratos de error; el MCP evitó una API inventada. Qué no
-> funcionó o queda como límite: la skill es manual, no hay gate de CI que la ejecute; el registro
-> global de skills no escanea `.agents/skills`, así que el alta fue manual en `.atl/skill-registry.md`;
-> context7 sin API key tiene rate limit; y la prueba de mutación es una garantía de test, no de
-> runtime: la garantía en producción sigue siendo RLS más un rol sin `BYPASSRLS`."
+> "Qué funcionó: la skill encontró un hueco de negocio que el autor del proposal no vio, frenó el
+> change de agenda antes de codear seis contratos de error y, después del apply, volvió a corregir la
+> spec antes de archivarla; el MCP evitó una API inventada. Qué queda como límite: la skill es manual,
+> no hay gate de CI que la ejecute; context7 sin API key tiene rate limit; la prueba de mutación es una
+> garantía de test, no de runtime —en producción la garantía es RLS más un rol sin `BYPASSRLS`—; y el
+> formulario toma la zona horaria del navegador porque la sesión todavía no expone la zona del tenant,
+> algo que está documentado como supuesto y cubierto por tests que no dependen de la zona del runner."
 
-> "Estado de la entrega: C-01 y C-02 archivados, 22 de 22 tasks en C-02, 56 tests en verde, y la
-> documentación completa en `docs/skills-mcp/`. El change de agenda ya pasó el gate con listo para
-> aplicar; el próximo paso es implementar sus dependencias, C-03, C-05 y C-06, y recién entonces
-> escribir el entregable. Gracias."
+> "Estado de la entrega: siete changes archivados con los cuatro gates, seiscientos noventa y cinco
+> tests de backend, ciento veintiocho unitarios y veinticuatro e2e de frontend en verde, y los cinco
+> criterios cubiertos: fundación, modelos y persistencia, auth y permisos, agenda con turnos sin
+> solapamiento, y frontend integrado contra el backend real. El resto del roadmap —cancelar,
+> reprogramar, lista de espera, facturación— queda como backlog post-deadline y está en CHANGES.md.
+> Gracias."
 
 ---
 
@@ -214,15 +311,18 @@ uv run pytest -q
 
 | Si falla | Mostrar en su lugar |
 |----------|---------------------|
-| Docker no arranca | `docs/core-tenancy.md` § 6 con la salida ya registrada (`56 passed`) y correr solo `ruff` + `mypy` |
+| Docker no arranca | `docs/appointments.md` § 7 (pipeline y suites) + `docs/skills-mcp/evidencias/gate-rls-agenda.md` (salidas ya registradas); correr solo `ruff` y `mypy` |
+| El backend no levanta a tiempo | `docs/appointments.md` § 5 (curl del alta y del `409` con su salida) |
 | context7 no responde | Tabla de consultas de `investigacion.md` + `tenant_context.py` |
-| `openspec` no está en PATH | Los archivos de `openspec/changes/archive/` y `openspec/specs/` directamente |
-| El test de mutación tarda | Explicar el test y mostrar el código; la ejecución completa ya está en el bloque 5 |
+| `openspec` no está en PATH | Los directorios de `openspec/changes/archive/` y `openspec/specs/` directamente |
+| Playwright no arranca | `frontend/tests/e2e/appointments.spec.ts` abierto + `docs/appointments.md` § 6 (frontend) |
+| El `EXCLUDE` sorprende en vivo | `backend/alembic/versions/007_agenda.py`: explicar `tsrange` sobre marcas UTC (por qué no `tstzrange`) |
 
 ---
 
 ## Frases que no conviene decir
 
 - "La IA hizo todo": el video muestra decisiones, no autocompletado.
-- "Los tests pasan": mostrar *qué* test fallaría si el constraint desapareciera.
-- "Está terminado": el entregable de agenda sigue pendiente; decirlo con honestidad.
+- "Los tests pasan": mostrar *qué* test fallaría si el constraint o el filtro de tenant desaparecieran.
+- "Está terminado": el entregable del TPI está completo, el **producto** no; el resto del roadmap está
+  en `CHANGES.md` y se dice así.

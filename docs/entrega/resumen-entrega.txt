@@ -7,7 +7,8 @@ Entrega: 2026-11-20 | Integrantes: 1
 1. QUÉ SE ENTREGA
 ------------------------------------------------------------------------------
 Sistema SaaS multi-tenant para clínicas odontológicas PyME de Argentina, con
-dos changes completos, verificados y archivados:
+siete changes completos, verificados y archivados (los 4 gates que exige la
+cátedra: propuesto, aplicado, verificado y archivado):
 
   [1] c-01-foundation-setup        -> archivado 2026-11-05 (32/32 tasks)
       Monorepo backend/frontend, tooling, tests con Postgres y Redis reales,
@@ -18,13 +19,51 @@ dos changes completos, verificados y archivados:
       currency), Row Level Security fail-closed, rol de aplicación sin
       BYPASSRLS, seed de catálogos y gate de aislamiento cross-tenant.
 
+  [3] c-03-auth-sessions           -> archivado 2026-11-10 (54/54 tasks)
+      Sesión httpOnly con access + refresh rotativo, login, MFA, reset y
+      switch-tenant; guardas en la API y e2e con navegador.
+
+  [4] c-04-rbac-permissions        -> archivado 2026-11-11 (49/49 tasks)
+      Matriz de permisos, require_permission, permisos en la sesión,
+      gestión de equipo, transferencia de ownership y auditoría. Con C-06
+      quedó en 19 recursos / 61 permisos.
+
+  [5] c-05-clinic-setup            -> archivado 2026-11-11 (45/45 tasks)
+      Sillones, profesionales, catálogo de especialidades y disponibilidad;
+      RLS con prueba de mutación y pantalla /clinica integrada.
+
+  [6] c-06-patients                -> archivado 2026-11-12 (37/37 tasks)
+      Ficha demográfica del paciente con historia clínica secuencial y no
+      reciclable (RN-CLI-01), dedupe duro por DNI y blando por nombre/teléfono,
+      búsqueda normalizada, frontera clínica (RN-CMP-04 / PQ-17), RLS con prueba
+      de mutación y pantalla /pacientes integrada.
+
+  [7] agendar-turno-sin-solapamiento -> archivado 2026-11-12 (13/13 tasks)
+      ENTREGABLE DEL TP (criterio 4). POST /api/v1/appointments crea el turno
+      reservando profesional y sillón, deriva fin y duración de la
+      disponibilidad (RN-AG-03) y rechaza el doble booking con 409: pre-chequeo
+      en la aplicación + EXCLUDE USING gist en Postgres como garantía dura bajo
+      concurrencia. RN-AG-10 (mismo paciente + mismo profesional) se evalúa
+      antes del solape de recursos. Pantalla /turnos/nuevo integrada contra el
+      backend real, con los 409 legibles y el 403 de RBAC.
+
 Specs principales:
   - openspec/specs/platform-runtime/spec.md   (5 requisitos)
   - openspec/specs/platform-tenancy/spec.md   (7 requisitos, 25 escenarios)
+  - openspec/specs/platform-auth/spec.md
+  - openspec/specs/platform-rbac/spec.md + platform-team/spec.md
+  - openspec/specs/clinic/setup/spec.md       (10 requisitos, 44 escenarios)
+  - openspec/specs/clinic/patients/spec.md    (11 requisitos, 57 escenarios)
+  - openspec/specs/agenda/appointments/spec.md (6 requisitos, 26 escenarios)
 
 Changes archivados:
   - openspec/changes/archive/2026-11-05-c-01-foundation-setup/
   - openspec/changes/archive/2026-11-05-c-02-core-models-tenancy/
+  - openspec/changes/archive/2026-11-10-c-03-auth-sessions/
+  - openspec/changes/archive/2026-11-11-c-04-rbac-permissions/
+  - openspec/changes/archive/2026-11-11-c-05-clinic-setup/
+  - openspec/changes/archive/2026-11-12-c-06-patients/
+  - openspec/changes/archive/2026-11-12-agendar-turno-sin-solapamiento/
 
 2. SKILL PROPIA
 ------------------------------------------------------------------------------
@@ -65,6 +104,37 @@ Evidencia de aplicación real:
     por tenant), con requisito, 3 escenarios, índice único parcial
     uq_membership_owner_activo y RED verificado.
 
+  - docs/skills-mcp/evidencias/revision-c-04*.md
+    Change: c-04-rbac-permissions (ciclo de 4 pasadas)
+    Veredicto: FALTAN ESCENARIOS -> LISTO PARA APLICAR
+    Resultado: 12 requisitos / 61 escenarios, con gate pre-archive que verifica
+    cada escenario contra una prueba ejecutada.
+
+  - docs/skills-mcp/evidencias/revision-c-05-pre-apply.md y
+    docs/skills-mcp/evidencias/revision-c-05-pre-archive.md
+    Change: c-05-clinic-setup
+    Veredicto: LISTO PARA APLICAR (pre-apply) y LISTO PARA ARCHIVAR (pre-archive)
+    Resultado: 10 requisitos / 44 escenarios, check de tenancy completo y gate
+    de RLS con prueba de mutación (docs/skills-mcp/evidencias/gate-rls-c-05.md).
+
+  - docs/skills-mcp/evidencias/revision-c-06-pre-apply.md y
+    docs/skills-mcp/evidencias/revision-c-06-pre-archive.md
+    Change: c-06-patients
+    Veredicto: LISTO PARA APLICAR (pre-apply) y LISTO PARA ARCHIVAR (pre-archive)
+    Resultado: 11 requisitos / 57 escenarios; 17 huecos cerrados antes de
+    implementar (incluidos DNI de paciente dado de baja, tope de candidatos,
+    colisión chequeo->INSERT y colación del orden) y gate de RLS con mutación
+    sobre patient y patient_counter
+    (docs/skills-mcp/evidencias/gate-rls-c-06.md).
+
+  - docs/skills-mcp/evidencias/revision-agendar-turno-pre-archive.md
+    Change: agendar-turno-sin-solapamiento (gate pre-archive, ya implementado)
+    Veredicto: LISTO PARA ARCHIVAR
+    Resultado: 5 defectos de redacción corregidos antes de congelarse en la spec
+    principal (precedencia RN-AG-10 vs RN-AG-02, tsrange vs tstzrange, solape
+    solo por buffers, 403 sin appointment.create y guarda de duracion_invalida).
+    Cobertura final: 6 requisitos / 26 escenarios, 26/26 con test.
+
 3. MCP
 ------------------------------------------------------------------------------
 Servidor elegido: context7 (remoto, https://mcp.context7.com/mcp)
@@ -75,15 +145,16 @@ Configuración: sección mcp.context7 de ~/.config/opencode/opencode.json
 Por qué context7 y no Playwright MCP:
   C-02 se define por SQL de PostgreSQL (RLS, políticas, set_config) y por el
   manejo de la sesión en SQLAlchemy. context7 aporta documentación oficial
-  directa a ese trabajo; Playwright MCP recién se vuelve útil con la UI de
-  agenda (C-07) y agrega herramientas que hoy no se usan.
+  directa a ese trabajo. Playwright se usa como herramienta de test (24 e2e,
+  incluido el flujo de /turnos/nuevo), no como servidor MCP: como MCP agregaría
+  herramientas de navegación que no aportan a la decisión de diseño.
 
 Uso real:
   - resolve-library-id("PostgreSQL", "RLS multi-tenant") -> /websites/postgresql
   - resolve-library-id("SQLAlchemy", "SET LOCAL RLS")   -> /sqlalchemy/sqlalchemy
   - query-docs: CREATE POLICY / ENABLE ROW LEVEL SECURITY
   - query-docs: SET LOCAL vs set_config por transacción
-  - query-docs: EXCLUDE USING gist (preparación de C-06)
+  - query-docs: índices únicos parciales y pg_trgm (C-06)
 
 Corrección concreta:
   Antes: SET LOCAL app.current_tenant = :tenant_id
@@ -95,8 +166,15 @@ Corrección concreta:
 
 4. AISLAMIENTO MULTI-TENANT (GATE RN-TEN-02)
 ------------------------------------------------------------------------------
-- membership y price_concept tienen RLS habilitada y FORZADA (FORCE ROW LEVEL
-  SECURITY).
+- Toda tabla de negocio tiene RLS habilitada y FORZADA (FORCE ROW LEVEL
+  SECURITY): membership, price_concept, chair, professional, availability_rule,
+  patient, patient_counter y appointment.
+- Además, appointment tiene garantía dura de no doble booking en la base:
+  EXCLUDE USING gist por professional_id y por chair_id sobre el rango bloqueado
+  [inicio - buffer_previo, fin + buffer_posterior), con WHERE estado NOT IN
+  ('cancelado','no_asistio') y tenant_id dentro del EXCLUDE. Se expresa sobre
+  tsrange de marcas UTC porque timestamptz - interval no es IMMUTABLE y Postgres
+  lo rechaza en un índice.
 - Políticas basadas en NULLIF(current_setting('app.current_tenant', true), '')
   ::uuid. El NULLIF evita el cast de cadena vacía tras un commit y mantiene el
   comportamiento fail-closed.
@@ -105,8 +183,9 @@ Corrección concreta:
   ignora RLS y, sin ese SET ROLE, el verde sería falso.
 - Prueba de mutación: el mismo SELECT como owner ve filas de A y de B; como rol
   de app ve solo A. Demuestra que el filtro lo hace la política, no un WHERE
-  accidental.
-- Test de reversibilidad: upgrade head -> downgrade base -> upgrade head.
+  accidental. Se repite en cada change con tablas nuevas (C-05, C-06 y agenda).
+- Test de reversibilidad: upgrade head -> downgrade base -> upgrade head, más un
+  ciclo por migración nueva (005_clinic_setup, 006_patients, 007_agenda).
 
 5. CÓMO REPRODUCIR
 ------------------------------------------------------------------------------
@@ -115,12 +194,18 @@ Requisitos: Python 3.12, uv, Docker Desktop, Node.js (frontend), OpenSpec.
   cd backend
   uv sync
   uv run ruff check .        -> All checks passed!
-  uv run mypy app            -> Success: no issues found in 22 source files
-  uv run pytest              -> 56 passed (17 de integración)
+  uv run mypy app            -> Success: no issues found in 79 source files
+  uv run pytest              -> 695 passed (Postgres 16 y Redis 7 reales)
+
+  cd ../frontend
+  npx tsc -b                 -> sin salida (limpio)
+  npx eslint .               -> 0 errores (1 warning preexistente)
+  npx vitest run             -> 128 passed
+  E2E_WEB_PORT=5180 npx playwright test -> 24 passed
 
   cd ..
-  openspec validate --archived --strict   -> 2 changes válidos
-  openspec validate --specs --strict      -> 2 specs válidas
+  openspec validate --archived --strict   -> 7 changes válidos
+  openspec validate --specs --strict      -> 8 specs válidas
 
   Guion del video: docs/entrega/guion-video.md
 
@@ -130,6 +215,20 @@ Requisitos: Python 3.12, uv, Docker Desktop, Node.js (frontend), OpenSpec.
     C-01: cómo correr, sondas de salud, variables de entorno, CI.
   docs/core-tenancy.md
     C-02: modelo, RLS, rol, contexto, seed, prueba de mutación y comandos.
+  docs/auth.md
+    C-03: sesión httpOnly, contrato de auth, lockout, MFA, reset, switch-tenant.
+  docs/rbac.md
+    C-04: matriz de 57 permisos, guarda, contrato de equipo, ownership y auditoría.
+  docs/clinic.md
+    C-05: sillones, profesionales, especialidades, disponibilidad, RLS y pantalla.
+  docs/patients.md
+    C-06: patient + patient_counter, 4 endpoints, regla de HCE, dedupe duro/blando,
+    búsqueda normalizada, frontera clínica (PQ-17), RLS y pantalla /pacientes.
+  docs/appointments.md
+    ENTREGABLE: modelo appointment, EXCLUDE USING gist, contrato de
+    POST /api/v1/appointments (201/409/422/404/401/403), precedencia de
+    validaciones, derivación de duración y buffers, reglas RN-AG, curl,
+    pantalla /turnos/nuevo, suites y límites declarados.
   docs/skills-mcp/investigacion.md
     Ficha de investigación: necesidad, skill-creator, comparación context7 vs
     Playwright MCP, configuración y fuentes.
@@ -141,21 +240,42 @@ Requisitos: Python 3.12, uv, Docker Desktop, Node.js (frontend), OpenSpec.
     Re-revisión tras cerrar los huecos: veredicto final LISTO PARA APLICAR.
   docs/skills-mcp/evidencias/revision-c-02.md
     Revisión de C-02 y cierre del hueco RN-TEN-04.
+  docs/skills-mcp/evidencias/revision-c-05-pre-apply.md
+  docs/skills-mcp/evidencias/revision-c-05-pre-archive.md
+  docs/skills-mcp/evidencias/gate-rls-c-05.md
+    Gate de C-05 (10 req./44 escenarios) y prueba de mutación de RLS.
+  docs/skills-mcp/evidencias/revision-c-06-pre-apply.md
+  docs/skills-mcp/evidencias/revision-c-06-pre-archive.md
+  docs/skills-mcp/evidencias/gate-rls-c-06.md
+    Gate de C-06 (11 req./57 escenarios) y mutación de RLS en patient y
+    patient_counter.
+  docs/skills-mcp/evidencias/revision-agendar-turno-pre-archive.md
+    Gate pre-archive del entregable: LISTO PARA ARCHIVAR, 5 defectos de la delta
+    corregidos y 26/26 escenarios con test.
+  docs/skills-mcp/evidencias/gate-rls-agenda.md
+    Gate RN-TEN-02 del entregable con prueba de mutación: 8 tests verdes; con RLS
+    apagada y 5 filtros de tenant quitados, 5 failed con assert 201 == 404.
 
 7. ESTADO Y PENDIENTES
 ------------------------------------------------------------------------------
 Cumplido:
-  - 2 changes archivados (mínimo del TPI).
-  - Skill propia creada, registrada y aplicada con evidencia.
+  - 7 changes archivados con los 4 gates (C-01 a C-06 + el entregable de agenda).
+  - Skill propia creada, registrada y aplicada con evidencia (incluye los gates
+    pre-apply y pre-archive de C-05, C-06 y agenda).
   - MCP configurado y aplicado con una corrección técnica verificable.
-  - 56 tests en verde; ruff y mypy en cero.
+  - 695 tests backend en verde; ruff y mypy en cero; 128 unit y 24 e2e de frontend.
+  - Criterio 1 (fundación + CI), 2 (modelos y persistencia), 3 (auth y permisos),
+    4 (agenda y turnos: alta sin solapamiento) cubiertos con API + UI reales; el
+    criterio 5 se demuestra con 4 pantallas operando contra el backend real
+    (Equipo, Clínica, Pacientes y Turnos) y el e2e del flujo completo.
   - Ciclo completo de la skill sobre el change de agenda: 6 huecos -> corrección
-    -> LISTO PARA APLICAR (24/24 escenarios con tarea).
+    -> LISTO PARA APLICAR (24/24) -> implementación -> gate pre-archive
+    (LISTO PARA ARCHIVAR, 26/26) -> archivado.
 
-Pendiente (fuera del mínimo de esta entrega):
-  - Implementar el entregable de agenda: C-03 -> C-05 -> C-06 -> C-07.
-    La spec de `agendar-turno-sin-solapamiento` ya está lista; el apply se pausa
-    porque sus dependencias no existen todavía como changes ni como migraciones.
+Pendiente (post-deadline, no bloquea la entrega):
+  - Resto del scope de C-07 (consulta de disponibilidad, reprogramar, cancelar,
+    check-in, lista de espera, auto-no_asistio), C-08 y C-09 en adelante.
+  - Video y formato final (PDF/ZIP) de esta entrega.
 
 8. NOTA SOBRE DATOS Y SECRETOS
 ------------------------------------------------------------------------------

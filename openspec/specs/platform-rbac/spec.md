@@ -11,18 +11,18 @@ proyección de permisos al SPA a través del contrato de sesión.
 
 ### Requirement: Catálogo de permisos atómicos y matriz rol→permiso completa
 
-El sistema MUST declarar la matriz RBAC como constantes de aplicación: **18 recursos** × **9 roles**
-con permisos atómicos nombrados `recurso.accion`. Los **16 recursos** se toman 1:1 de la tabla de
-`knowledge-base/03_actores_y_roles.md` (líneas 33-48); la fila "Usuarios y roles" se desdobla en dos
-recursos —`team` (CRUD de memberships) y `ownership` (`ownership.transfer`)—, lo que da 17, y se
-agrega `membership_event` para la auditoría de RBAC (18), que no tiene lectores en la aplicación.
-Cada celda de la matriz de la KB MUST traducirse a la misma
-cantidad de acciones (`C`→`create`, `R`→`read`, `U`→`update`, `D`→`delete`), y los accesos
-"propios" del paciente MUST declararse con el sufijo `_own` (nunca como `read` pleno). Los permisos
-efectivos de un usuario en un tenant MUST ser la **unión** de los permisos de sus memberships
-activas, y un rol o permiso desconocido MUST resolver a conjunto vacío (fail-closed), nunca a
-"permitir todo". Ningún endpoint ni componente de UI MUST comparar el nombre del rol para decidir un
-acceso: la decisión MUST salir del conjunto de permisos.
+El sistema MUST declarar la matriz RBAC como constantes de aplicación: **19 recursos** × **9 roles**
+con permisos atómicos nombrados `recurso.accion`. Los **17 recursos** se toman 1:1 de la tabla de
+`knowledge-base/03_actores_y_roles.md` (§ Recursos estructurales); la fila "Usuarios y roles" se
+desdobla en dos recursos —`team` (CRUD de memberships) y `ownership` (`ownership.transfer`)—, lo que da
+18, y se agrega `membership_event` para la auditoría de RBAC (19), que no tiene lectores en la
+aplicación. Cada celda de la matriz de la KB MUST traducirse a la misma cantidad de acciones
+(`C`→`create`, `R`→`read`, `U`→`update`, `D`→`delete`), y los accesos "propios" del paciente MUST
+declararse con el sufijo `_own` (nunca como `read` pleno). Los permisos efectivos de un usuario en un
+tenant MUST ser la **unión** de los permisos de sus memberships activas, y un rol o permiso desconocido
+MUST resolver a conjunto vacío (fail-closed), nunca a "permitir todo". Ningún endpoint ni componente de
+UI MUST comparar el nombre del rol para decidir un acceso: la decisión MUST salir del conjunto de
+permisos.
 
 #### Scenario: S1.1 — El owner obtiene exactamente el conjunto de su fila de la matriz
 
@@ -30,14 +30,14 @@ acceso: la decisión MUST salir del conjunto de permisos.
   `owner` en el tenant
 - **THEN** el conjunto incluye `tenant_settings.create`, `tenant_settings.read`,
   `tenant_settings.update`, `chair.create`, `chair.read`, `chair.update`, `chair.delete`,
-  `professional.create`, `professional.read`, `professional.update`, `team.create`, `team.read`,
-  `team.update`, `team.delete`, `appointment.create`, `appointment.read`, `appointment.update`,
-  `appointment.delete`, `cash.create`, `cash.read`, `cash.update`, `invoice.create`, `invoice.read`,
-  `invoice.update`, `settlement.create`, `settlement.read`, `settlement.update`,
-  `report_financial.read`, `report_usage.read`, `migration.create`, `migration.read`,
-  `migration.update`, `aaip_request.create`, `aaip_request.read`, `whatsapp_config.create`,
-  `whatsapp_config.read`, `whatsapp_config.update`, `clinical_record.read`, `chart.read`,
-  `consent.read` y `ownership.transfer`
+  `professional.create`, `professional.read`, `professional.update`, `patient.create`, `patient.read`,
+  `patient.update`, `patient.delete`, `team.create`, `team.read`, `team.update`, `team.delete`,
+  `appointment.create`, `appointment.read`, `appointment.update`, `appointment.delete`, `cash.create`,
+  `cash.read`, `cash.update`, `invoice.create`, `invoice.read`, `invoice.update`,
+  `settlement.create`, `settlement.read`, `settlement.update`, `report_financial.read`,
+  `report_usage.read`, `migration.create`, `migration.read`, `migration.update`, `aaip_request.create`,
+  `aaip_request.read`, `whatsapp_config.create`, `whatsapp_config.read`, `whatsapp_config.update`,
+  `clinical_record.read`, `chart.read`, `consent.read` y `ownership.transfer`
 - **AND** no incluye `chart.finalize`, `clinical_record.create` ni `clinical_record.update`, que no
   figuran para `owner` en la matriz
 
@@ -52,10 +52,11 @@ acceso: la decisión MUST salir del conjunto de permisos.
 #### Scenario: S1.3 — Un recurso sin letra para el rol no concede el permiso
 
 - **WHEN** se resuelven los permisos de una membership activa `front_desk` (recepcionista)
-- **THEN** el conjunto no incluye `clinical_record.read`, `chart.read`, `team.read`, `cash.delete`
-  ni `ownership.transfer`
+- **THEN** el conjunto no incluye `clinical_record.read`, `chart.read`, `team.read`, `cash.delete`,
+  `patient.delete` ni `ownership.transfer`
 - **AND** sí incluye `appointment.create`, `appointment.read`, `appointment.update`,
-  `appointment.delete`, `cash.create`, `cash.read`, `cash.update` e `invoice.create`/`invoice.read`
+  `appointment.delete`, `patient.create`, `patient.read`, `patient.update`, `cash.create`,
+  `cash.read`, `cash.update` e `invoice.create`/`invoice.read`
 
 #### Scenario: S1.4 — Un rol o permiso fuera del catálogo falla cerrado
 
@@ -63,7 +64,7 @@ acceso: la decisión MUST salir del conjunto de permisos.
   que no está en el catálogo
 - **THEN** devuelve conjunto vacío o lanza un error de dominio, pero nunca concede un permiso no
   declarado
-- **AND** el test parametrizado de la matriz recorre las 9 filas × 18 recursos y falla si una celda
+- **AND** el test parametrizado de la matriz recorre las 9 roles × 19 recursos y falla si una celda
   de la KB no coincide con el catálogo declarado
 
 ### Requirement: Guarda HTTP por permiso y catálogo estable de errores de autorización
@@ -118,8 +119,8 @@ MUST tener permiso de lectura de historia clínica, y `front_desk`, `billing`, `
 `external_lab` MUST carecer de `clinical_record.read`, `chart.read` y `chart.finalize`. La recepcionista MUST NOT poder leer historia clínica ni odontograma por ninguna
 vía HTTP (frontera dura, no preferencia de UI). El único rol con `chart.finalize` MUST ser
 `professional`: `assistant` puede crear y leer odontograma pero no cerrarlo como autor. Mientras el
-dominio clínico no exista (C-06), la frontera MUST probarse sobre un endpoint sonda reservado que no
-crea tablas ni datos clínicos.
+dominio clínico no exista (llega con **C-09**; la ficha demográfica de C-06 **no** lo reemplaza), la
+frontera MUST probarse sobre un endpoint sonda reservado que no crea tablas ni datos clínicos.
 
 #### Scenario: S3.1 — La recepcionista recibe 403 en el endpoint clínico reservado
 
@@ -132,7 +133,7 @@ crea tablas ni datos clínicos.
 
 - **WHEN** una sesión con membership activa `professional` invoca `GET /api/v1/clinical/patients`
 - **THEN** la guarda de permiso se satisface y responde `501` con `code = "capability_pending"`
-- **AND** la respuesta no devuelve datos clínicos ni crea tablas: la capacidad se completa en C-06
+- **AND** la respuesta no devuelve datos clínicos ni crea tablas: la capacidad se completa en **C-09**
   y queda registrada como deuda
 
 #### Scenario: S3.3 — Solo el profesional finaliza odontograma y facturación no escribe clínica

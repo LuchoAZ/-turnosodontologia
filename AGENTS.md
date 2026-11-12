@@ -86,9 +86,9 @@ Creada por el equipo con `skill-creator` y versionada en `.agents/skills/spec-sc
 El plan completo está en [CHANGES.md](CHANGES.md). Resumen:
 
 - **Total**: 23 changes en 9 fases (FASE 0 a FASE 8).
-- **Sprint 1 dev** (SU-01: 1 dev, SU-02: deadline **2026-10-23**): la "ruta del turno", 6 changes secuenciales — `C-01 → C-02 → C-03 → C-05 → C-06 → C-07`. **META (entregable TP)**: change `agendar-turno-sin-solapamiento` (crear turno sin solapamientos por profesional y sillón — RN-AG-02). Sin paralelismo.
-- **Backlog post-deadline**: 17 changes (C-04, C-08…C-23), facturación priorizada según DD-01.
-- **Primer change**: `C-01` (foundation-setup) — ya propuesto en `openspec/changes/c-01-foundation-setup/`.
+- **Sprint 1 dev** (SU-01: 1 dev, SU-02: deadline **2026-10-23**): la "ruta del turno" — `C-01 → C-02 → C-03 → C-04 → C-05 → C-06 → C-07`. C-04 se adelantó al Sprint por el criterio de auth/permisos del TP. **META (entregable TP)**: change `agendar-turno-sin-solapamiento` (crear turno sin solapamientos por profesional y sillón — RN-AG-02). Sin paralelismo.
+- **Estado al 2026-11-12**: `C-01`…`C-06` **archivados** con los 4 gates (propuesto, aplicado, verificado, archivado). La matriz RBAC quedó en **19 recursos / 61 permisos** (C-06 agregó la fila `patient`). **El sprint está cerrado**: `agendar-turno-sin-solapamiento` también quedó archivado (2026-11-12; 13/13 tasks, `pytest` 695, `vitest` 128, `playwright` 24) y con él el **criterio 4** del TPI. Lo que sigue es backlog post-deadline (no bloquea la entrega).
+- **Backlog post-deadline**: 16 changes (C-08…C-23), facturación priorizada según DD-01.
 
 **Antes de cualquier `/opsx:propose`**: leé [CHANGES.md](CHANGES.md), identificá las dependencias del change y los archivos de "Leer antes".
 

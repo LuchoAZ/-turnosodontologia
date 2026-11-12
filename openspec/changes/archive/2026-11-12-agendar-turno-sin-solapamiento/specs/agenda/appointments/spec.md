@@ -30,6 +30,10 @@ El sistema MUST aceptar `POST /api/v1/appointments` y crear el turno reservando 
 - **WHEN** se invoca el endpoint sin una sesión válida
 - **THEN** la respuesta es `401` y no se crea ningún turno
 
+#### Scenario: Operación sin permiso
+- **WHEN** la sesión es válida y tiene membership activa pero su rol no incluye `appointment.create`
+- **THEN** la respuesta es `403` con `code = forbidden` (lo emite la guarda de RBAC, C-04) y no se crea ningún turno
+
 #### Scenario: Sesión sin membership activa
 
 - **WHEN** la sesión es válida pero no tiene una `membership` activa en el tenant
@@ -37,7 +41,7 @@ El sistema MUST aceptar `POST /api/v1/appointments` y crear el turno reservando 
 
 ### Requirement: Prevenir solapamiento por profesional y por sillón
 
-El sistema MUST rechazar con `409` la creación de un turno cuyo rango bloqueado `[inicio - buffer_previo_min, fin + buffer_posterior_min)` se solape con el de otro turno del mismo `professional` o del mismo `chair` del tenant cuyo estado NO sea `cancelado` ni `no_asistio` (mismo criterio que el `EXCLUDE`; RN-AG-02). El rechazo MUST identificar el recurso en conflicto (`professional` | `chair`) y el rango solapado. Los turnos en estado `cancelado` o `no_asistio` MUST NOT generar conflicto. La base de datos MUST ser la garantía final: bajo concurrencia, el `EXCLUDE USING gist` sobre `tstzrange` rechaza el doble booking aunque la validación de aplicación no llegue a verlo.
+El sistema MUST rechazar con `409` la creación de un turno cuyo rango bloqueado `[inicio - buffer_previo_min, fin + buffer_posterior_min)` se solape con el de otro turno del mismo `professional` o del mismo `chair` del tenant cuyo estado NO sea `cancelado` ni `no_asistio` (mismo criterio que el `EXCLUDE`; RN-AG-02). El rechazo MUST identificar el recurso en conflicto (`professional` | `chair`) y el rango solapado. Los turnos en estado `cancelado` o `no_asistio` MUST NOT generar conflicto. La base de datos MUST ser la garantía final: bajo concurrencia, el `EXCLUDE USING gist` sobre el rango bloqueado rechaza el doble booking aunque la validación de aplicación no llegue a verlo. El `EXCLUDE` MUST comparar marcas UTC (`tsrange((inicio AT TIME ZONE 'UTC') - make_interval(...), ...)`): `timestamptz - interval` no es `IMMUTABLE` y Postgres lo rechaza en un índice.
 
 #### Scenario: Solapamiento por profesional
 
@@ -58,6 +62,11 @@ El sistema MUST rechazar con `409` la creación de un turno cuyo rango bloqueado
 
 - **WHEN** el rango bloqueado del turno nuevo empieza exactamente cuando termina el rango bloqueado de otro del mismo recurso (con buffers 0: `nuevo.inicio == existente.fin`)
 - **THEN** la respuesta es `201`, porque el rango es `[inicio, fin)` y el extremo final es exclusivo
+
+#### Scenario: Solapamiento producido solo por un buffer
+
+- **WHEN** los rangos clínicos (`[inicio, fin)`) de dos turnos del mismo recurso no se tocan, pero el rango bloqueado del existente se extiende por su `buffer_posterior_min` (o el del nuevo por su `buffer_previo_min`) hasta alcanzarlos
+- **THEN** la respuesta es `409`, porque el solape se evalúa sobre el rango **bloqueado**, no sobre el clínico (RN-AG-03)
 
 #### Scenario: Doble booking concurrente rechazado por la base de datos
 
@@ -87,6 +96,10 @@ El sistema MUST derivar la duración base del turno en este orden: (1) `slot_min
 
 - **WHEN** la duración resuelta (regla o `duracion_default_min`) es `<= 0` por configuración inválida del tenant
 - **THEN** la respuesta es `409` con `{ motivo: "duracion_invalida" }` y no se crea ningún turno
+
+> Guarda defensiva: los `CHECK` vigentes (`duracion_default_min BETWEEN 5 AND 480`, `slot_min > 0`)
+> la hacen inalcanzable por API. El caso se testea mutando el esquema (drop/re-add del `CHECK`) y
+> restaurándolo en `finally`; se conserva por si un change futuro relaja los `CHECK`.
 
 ### Requirement: Almacenar horarios en UTC
 
@@ -124,7 +137,7 @@ El sistema MUST rechazar con `409` un turno si el `patient_id` ya tiene otro tur
 #### Scenario: Turno sin paciente identificado
 
 - **WHEN** `patient_id` es `NULL` y ya existe otro turno solapado del mismo `professional`
-- **THEN** el turno se crea con `201`, porque RN-AG-10 no aplica a turnos sin paciente identificado
+- **THEN** RN-AG-10 no se evalúa (nunca responde `paciente_solapado`), pero el turno **no** se crea si el recurso está ocupado: RN-AG-02 es regla dura y responde `409 turno_solapado`
 
 ### Requirement: Aislar la agenda por tenant
 

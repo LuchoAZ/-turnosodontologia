@@ -76,6 +76,10 @@ además agrega herramientas que inflan el contexto sin uso concreto hoy. Context
 no requiere instalar nada, no necesita credenciales y es de solo lectura: el límite de acceso
 es "documentación pública del stack", sin datos del proyecto.
 
+> **Nota al 2026-11-12**: la decisión no cambió. La UI de agenda ya existe (`/turnos/nuevo`) y
+> Playwright se usa como **herramienta de test** (24 e2e, incluido el flujo de agenda), no como
+> servidor MCP.
+
 ### Evidencia de uso real (2026-11-05)
 
 | Solicitud | Resultado obtenido | Aporte al change |

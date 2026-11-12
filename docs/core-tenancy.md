@@ -32,7 +32,7 @@ Decisiones de esquema relevantes:
   a lo sumo un owner activo por tenant). La invariante complementaria —cero owners— la
   garantiza la transacción atómica de transferencia de ownership (C-04), no un constraint.
   `membership.professional_id` queda como UUID nullable **sin FK** hasta C-05 (deuda
-  explícita del design).
+  explícita del design); **C-05 la cerró** con `fk_professional_user` en la migración `005_clinic_setup`.
 - `price_concept` usa `UNIQUE NULLS NOT DISTINCT (tenant_id, codigo)`: sin `NULLS NOT
   DISTINCT`, dos conceptos globales con el mismo código convivirían porque `NULL != NULL`.
 - `specialty` tiene un índice único parcial `UNIQUE (nombre) WHERE tenant_id IS NULL` para el

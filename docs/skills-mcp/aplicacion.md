@@ -1,6 +1,6 @@
 # Informe de aplicación — skill propia y MCP
 
-**Proyecto**: Gestión Odontológica PyME (`odontologia-saas`) · **Integrantes**: 1 · **Fecha**: 2026-11-05 (actualizado 2026-11-06)
+**Proyecto**: Gestión Odontológica PyME (`odontologia-saas`) · **Integrantes**: 1 · **Fecha**: 2026-11-05 (actualizado 2026-11-12)
 **Entrega**: TPI Metodología I (2026-11-20)
 **Change elegido**: `c-02-core-models-tenancy` (archivado) · **Change revisado además**: `agendar-turno-sin-solapamiento`
 
@@ -20,8 +20,9 @@ qué límites tiene el enfoque. La ficha de investigación previa está en
 | Hueco real detectado y cerrado | **RN-TEN-04** (a lo sumo un `owner` activo por tenant) en C-02, con test RED verificado y prueba de mutación |
 | Huecos detectados antes de codear | **6** en `agendar-turno-sin-solapamiento` (1.ª pasada: `FALTAN ESCENARIOS`), **corregidos y re-revisados** hasta `LISTO PARA APLICAR` (3.ª pasada) |
 | Corrección técnica atribuida a context7 | `SET LOCAL … = :tenant_id` → `SELECT set_config('app.current_tenant', :tenant_id, true)` |
-| Changes archivados | **2**: `2026-11-05-c-01-foundation-setup` y `2026-11-05-c-02-core-models-tenancy` |
-| Verificación final | `ruff` 0 · `mypy app` 0 · **56 tests passed** (17 de integración con Postgres 16 real) |
+| Changes archivados | **7**: `c-01`…`c-06` y `2026-11-12-agendar-turno-sin-solapamiento` |
+| Skill re-ejecutada como **gate pre-archive** | 4.ª pasada sobre `agendar-turno-sin-solapamiento` ya implementado: veredicto `LISTO PARA ARCHIVAR`; corrigió 5 defectos de redacción de la delta que habrían quedado congelados en la spec principal ([evidencia](evidencias/revision-agendar-turno-pre-archive.md)) |
+| Verificación final | `ruff` 0 · `mypy app` 0 (79 archivos) · **695 tests passed** back · **128** unit front · **24** e2e |
 
 El mínimo del TPI —dos changes completos, verificados y archivados— queda cumplido por C-01 y C-02.
 La skill y el MCP no se usaron "de adorno": la skill cambió el alcance de C-02 (agregó RN-TEN-04),
@@ -111,8 +112,12 @@ El ciclo también destapó un problema que la revisión de escenarios sola no ha
 asumía que C-02 aportaba `appointment`, pero C-02 lo había excluido explícitamente. Ahora el change es
 dueño del modelo, del `EXCLUDE USING gist` y de su RLS (tareas 0.1 y 0.2).
 
-**Estado**: `LISTO PARA APLICAR`, condicionado a que existan C-03, C-05 y C-06 —hoy no existen ni como
-changes ni como migraciones—. El apply se pausa hasta entonces; la spec ya no es el bloqueante.
+**Estado en ese momento**: `LISTO PARA APLICAR`, condicionado a que existan C-03, C-05 y C-06 —que aún
+no existían ni como changes ni como migraciones—. El apply quedó en pausa; la spec ya no era el
+bloqueante. **Resultado (2026-11-12)**: C-03/C-05/C-06 se completaron, el change se aplicó con
+`pytest` 695 / `vitest` 128 / `playwright` 24 en verde, pasó el gate pre-archive (`LISTO PARA
+ARCHIVAR`, 26/26 escenarios con test) y se archivó como
+`2026-11-12-agendar-turno-sin-solapamiento`.
 
 ---
 
@@ -325,8 +330,8 @@ uv run pytest tests/integration/test_migration_reversibility.py -q
   `mypy app`, que pasa. Se documenta para que nadie lo confunda con una regresión del change.
 - **Alcance declarado, no maquillado.** RN-TEN-04 garantiza *a lo sumo* un owner activo; la
   invariante *exactamente uno* (cero owners) requiere la transacción atómica de C-04 y así quedó
-  escrito. Los seis huecos de agenda se cerraron y la spec quedó `LISTO PARA APLICAR`; lo que falta
-  para implementarla son sus dependencias (C-03/C-05/C-06), no la spec.
+  escrito. Los seis huecos de agenda se cerraron, la spec quedó `LISTO PARA APLICAR` y después se
+  implementó y archivó con un gate pre-archive extra que corrigió 5 defectos de la delta.
 - **La prueba de mutación es una garantía de test, no de runtime.** Demuestra que la suite detecta la
   ausencia de la política/constraint; la garantía en producción sigue siendo RLS + el rol sin
   `BYPASSRLS`.
@@ -339,7 +344,11 @@ uv run pytest tests/integration/test_migration_reversibility.py -q
    la evidencia", como se hizo en C-02 (tarea 5.4), para que no dependa de la memoria.
 3. Para el próximo change, pasar la skill **dos veces** cuando se corrijan huecos: la segunda pasada
    del change de agenda encontró dos defectos que la primera no vio (doble fuente para `fin` y `401`
-   sin tarea). Una sola pasada verde no alcanza después de tocar la spec.
+   sin tarea). Una sola pasada verde no alcanza después de tocar la spec. **Y una tercera sobre el
+   change ya implementado**: el gate pre-archive de la agenda encontró 5 defectos de redacción que
+   iban a quedar congelados en la spec principal (precedencia RN-AG-10/RN-AG-02, `tsrange` vs
+   `tstzrange`, solape por buffers, `403` sin permiso, guarda de `duracion_invalida`). La lección:
+   `LISTO PARA APLICAR` no implica `LISTO PARA ARCHIVAR`.
 
 ---
 
@@ -351,11 +360,15 @@ La aplicación de la skill y del MCP dejó resultados verificables, no una decla
 - **RN-TEN-04 cerrado** con requisito, índice parcial, dos tests y RED demostrado.
 - **Ciclo completo sobre la agenda**: seis huecos detectados antes de escribir la primera línea del
   entregable, corregidos, re-revisados y veredicto final `LISTO PARA APLICAR` (6 requisitos,
-  24 escenarios, 24/24 con tarea).
+  24 escenarios, 24/24 con tarea). Después del apply, la skill volvió a correr como **gate
+  pre-archive** y corrigió 5 defectos de la delta (precedencia RN-AG-10/RN-AG-02, `tsrange` vs
+  `tstzrange`, solape solo por buffers, `403` sin permiso, guarda de `duracion_invalida`) antes de
+  que se congelaran en la spec principal: 6 requisitos, **26 escenarios**, 26/26 con test.
 - **Una corrección técnica concreta** (`set_config` parameterizado) que evita un leak entre
   transacciones del pool.
 
-**Próximo paso**: implementar el entregable ejecutando C-03 → C-05 → C-06 y después
-`/opsx:apply agendar-turno-sin-solapamiento`. La spec ya no es el bloqueante; las dependencias sí.
-La documentación de la entrega (video y TXT) se apoya en este informe y en
+**Próximo paso**: ninguna dependencia bloquea la entrega. Los 7 changes del sprint están archivados
+(`pytest` 695, `vitest` 128, `playwright` 24) y el entregable `agendar-turno-sin-solapamiento` quedó
+implementado punta a punta (API + `/turnos/nuevo` + e2e contra el backend real). Lo que sigue es
+backlog post-deadline. La documentación de la entrega (video y TXT) se apoya en este informe y en
 [`investigacion.md`](investigacion.md).

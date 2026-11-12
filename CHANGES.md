@@ -41,31 +41,36 @@ puede saltear:
 > namespaces por agente del plan original quedaron obsoletos: la ejecución es secuencial.
 
 > **Números de migración**: los que aparecen en cada change son **indicativos**. La numeración
-> real vive en `backend/alembic/versions/` (`c01_baseline`, `002_core_tenancy`). Al proponer un
-> change, usá el siguiente número libre, no el del roadmap.
+> real vive en `backend/alembic/versions/` (`c01_baseline`, `002_core_tenancy`, `003_auth`,
+> `004_rbac`, `005_clinic_setup`, `006_patients`, `007_agenda`). Al proponer un change, usá el
+> siguiente número libre, no el del roadmap.
 
 ---
 
-## Estado del roadmap (2026-11-05)
+## Estado del roadmap (2026-11-12)
 
 | Change | Estado | Evidencia |
 |--------|--------|-----------|
 | C-01 `foundation-setup` | ✅ **cuenta** — archivado (2026-11-05) | `openspec/specs/platform-runtime/spec.md`, `docs/foundation.md` — 32/32 tasks, tests en verde |
 | C-02 `core-models-tenancy` | ✅ **cuenta** — archivado (2026-11-05) | `openspec/specs/platform-tenancy/spec.md`, `docs/core-tenancy.md` — 22/22 tasks, 56 tests, mutación |
-| `agendar-turno-sin-solapamiento` | 🟡 propuesto — **NO cuenta** (0/13 tasks) | Spec `LISTO PARA APLICAR` (6 req., 24 escenarios); falta aplicar y verificar |
 | C-03 `auth-sessions` | ✅ **cuenta** — archivado (2026-11-10) | `openspec/specs/platform-auth/spec.md`, `docs/auth.md` — 54/54 tasks; `pytest` **193 passed**, `vitest` **22 passed**, `playwright` **6 passed** (4 de auth con navegador) |
-| C-04, C-05, C-06 | ⬜ pendientes — **NO cuentan** | Ni propuestos; son los que completan los criterios 2, 3 y 5 del TPI |
+| C-04 `rbac-permissions` | ✅ **cuenta** — archivado (2026-11-11) | `openspec/specs/platform-rbac/spec.md` + `platform-team/spec.md`, `docs/rbac.md` — 49/49 tasks; `pytest` **334 passed**, `vitest` **43 passed**, `playwright` **11 passed**; gate de escenarios pre-archive |
+| C-05 `clinic-setup` | ✅ **cuenta** — archivado (2026-11-11) | `openspec/specs/clinic/setup/spec.md`, `docs/clinic.md` — 45/45 tasks; `pytest` **444 passed**, `vitest` **67 passed**, `playwright` **15 passed**; gate RN-TEN-02 con prueba de mutación |
+| C-06 `patients` | ✅ **cuenta** — archivado (2026-11-12) | `openspec/specs/clinic/patients/spec.md`, `docs/patients.md` — 37/37 tasks; `pytest` **621 passed**, `vitest` **96 passed**, `playwright` **19 passed**; gate RN-TEN-02 con prueba de mutación; PQ-17 registrada |
+| `agendar-turno-sin-solapamiento` | ✅ **cuenta** — archivado (2026-11-12) como `2026-11-12-agendar-turno-sin-solapamiento` | `openspec/specs/agenda/appointments/spec.md` (6 req., 26 escenarios), `docs/appointments.md` — 13/13 tasks; `pytest` **695 passed**, `vitest` **128 passed**, `playwright` **24 passed**; gate RN-TEN-02 con prueba de mutación + gate `spec-scenario-review` pre-archive |
 
 > **Dos deadlines distintos**: el supuesto interno **SU-02 (2026-10-23)** es el deadline del
 > plan de sprint de 1 dev; la **entrega académica del TPI es 2026-11-20**. El sprint es una
 > guía de priorización, no un bloqueo.
 >
 > **Estado frente a los 5 criterios del TPI** (fundación, modelos/persistencia, auth/permisos,
-> agenda, frontend): C-01 cubre el 1; C-02 cubre el 2 solo en parte (tenancy y catálogos, sin
-> entidades clínicas); **C-03 (archivado) cubre el 3 —login, acceso autorizado y rechazo de accesos
-> inválidos, verificado con e2e de navegador— y el frente de auth del 5 (SPA consumiendo el backend
-> real)**. **El criterio 4 (agenda y turnos) sigue sin cubrir**: para llegar al entregable hay que
-> cerrar el ciclo completo de **C-04, C-05, C-06 y `agendar-turno-sin-solapamiento`**.
+> agenda, frontend): C-01 cubre el 1; C-02 + **C-05 y C-06 (archivados: sillones, profesionales,
+> disponibilidad y ahora fichas de pacientes con HCE numerada, dedupe y RLS) cubren el 2**; C-03 +
+> **C-04 (archivado: matriz de 61 permisos, guardas y rechazo de accesos inválidos, verificado en
+> API y UI) cubren el 3**; **el criterio 4 quedó cubierto con `agendar-turno-sin-solapamiento`**
+> (alta de turno sin solapamientos por profesional y sillón, duración derivada, RN-AG-10 y
+> `EXCLUDE USING gist` como garantía de la base), y el criterio 5 avanza con las pantallas de
+> Equipo, Clínica, Pacientes y **`/turnos/nuevo`** operando contra el backend real.
 
 ---
 
@@ -79,10 +84,10 @@ Alcance del deadline con **1 developer** (SU-01 confirmado) y **2 semanas** (SU-
 | 2 | C-02 core-models-tenancy | 2 días | Modelos, migraciones, **RLS**, seed |
 | 3 | C-03 auth-sessions | 2 días | Login/OTP, sesión, scoping de tenant |
 | 4 | C-05 clinic-setup | 1.5 días | Sillones, profesionales, disponibilidad |
-| 5 | C-06 patients | 1.5 días | CRUD de pacientes |
+| 5 | C-06 patients | 1.5 días | Ficha de pacientes con HCE numerada y dedupe |
 | 6 | **`agendar-turno-sin-solapamiento`** (núcleo de C-07 agenda-booking) | 3 días | **META (entregable TP)**: crear turno sin solapamientos — RN-AG-01/02/03/09/10 |
 
-**Fuera de este sprint (backlog post-deadline)**: C-04, C-08, C-09…C-23, incluyendo toda la
+**Fuera de este sprint (backlog post-deadline)**: C-08…C-23, incluyendo toda la
 facturación ARCA (C-14…C-17), con el mismo árbol de dependencias de abajo.
 
 ## Árbol de dependencias
@@ -92,8 +97,8 @@ C-01 foundation-setup
   └── C-02 core-models-tenancy                   ← CRITICO: RLS + todo lo referencia
         └── C-03 auth-sessions                    ← desbloquea TODO lo protegido
               │
-              ├── C-04 rbac-invitations
-              ├── C-05 clinic-setup (sillones, profesionales, disponibilidad)
+              ├── C-04 rbac-permissions (✅ archivado 2026-11-11)
+              ├── C-05 clinic-setup (✅ archivado 2026-11-11)
               ├── C-06 patients
               ├── C-16 fiscal-onboarding           ← independiente del dominio clínico
               └── C-18 comms-infra
@@ -215,16 +220,20 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
   - `knowledge-base/08_arquitectura_propuesta.md` §Seguridad §Autenticación
   - `knowledge-base/09_decisiones_y_supuestos.md` §DD-10 (sesión httpOnly)
 
-### [C-04] `rbac-invitations`
-- **Estado**: `[ ]` pendiente
-- **Scope**: Autorización por roles + alta de usuarios
-  - `RoleGuard` + decorator `@Roles()`, matriz de permisos centralizada (03 actores)
+### [C-04] `rbac-permissions`
+- **Estado**: `[x]` archivado (2026-11-11) — 49/49 tasks; spec en `openspec/specs/platform-rbac/` y
+  `platform-team/`, documento en `docs/rbac.md`
+- **Scope**: Autorización por roles y gestión de equipo
+  - `require_permission` + matriz de 57 permisos centralizada (03 actores)
+  - `SessionOut.permissions[]` derivado del rol; la UI decide con `hasPermission`, nunca con `roles`
   - Fronteras duras codificadas: recepción NO lee historia clínica; SuperAdmin no lee clínica; lab no ve HC (RN-CMP-04)
-  - `POST /tenants/:id/invitations` (expiración 7 días) + aceptación
-  - `membership` con `professional_id` (rol ↔ profesional) — el mismo user en N tenants con roles distintos (RN-TEN-05)
-  - Transferencia de ownership atómica: nunca 0 owners (RN-TEN-04)
-  - Migración `004_rbac` (invitations)
+  - `GET/POST/PATCH/DELETE /team/members` + transferencia de ownership atómica (nunca 0 owners, RN-TEN-04)
+  - `membership` con `professional_id` (rol ↔ profesional): el mismo user en N tenants con roles distintos (RN-TEN-05)
+  - `membership_event` (auditoría) bajo RLS
+  - Migración `004_rbac`
   - Tests: cada rol ve exactamente lo de su matriz; intentos de escalada fallan
+  - **Recorte registrado (PQ-08)**: sin invitaciones por email. El alta de miembro la hace un rol con
+    `team.invite`; el proveedor de email llega con C-18.
 - **Dependencias**: C-03
 - **Governance**: ALTO
 - **Leer antes**:
@@ -234,15 +243,17 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
   - `knowledge-base/08_arquitectura_propuesta.md` §Autorización
 
 ### [C-05] `clinic-setup` — SPRINT
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` archivado (2026-11-11) — 45/45 tasks; spec en `openspec/specs/clinic/setup/`,
+  documento en `docs/clinic.md`
 - **Scope**: Configuración operativa de la clínica
-  - Modelos: `chair`, `professional`, `availability_rule`
-  - `GET/POST/PATCH /chairs` + `GET /chairs/:id/utilization` (base)
-  - `GET/POST/PATCH /professionals` + `POST /professionals/:id/schedule`
-  - `availability_rule` con `slot_min`, `buffer_previo_min`, `buffer_posterior_min`
-  - Validación RN-AG-06: no 2 sillones `rx` con turno solapado (preparada, se activa en C-07)
+  - Modelos: `chair`, `professional`, `availability_rule` (RLS `FORCE` + `tenant_id NOT NULL`)
+  - `GET/POST/PATCH /clinic/chairs` + `DELETE` = baja lógica (`activo = false`)
+  - `GET/POST/PATCH /clinic/professionals` (la baja es `PATCH activo = false`; no hay `professional.delete`)
+  - `GET /clinic/specialties`: catálogo global + propio, fuente del alta de profesional
+  - `GET/POST/PATCH /clinic/availability` con `slot_min`, `buffer_previo_min`, `buffer_posterior_min` y validación de solape
   - Migración `005_clinic_setup`
-  - Tests: CRUD, unicidad `(tenant_id, matricula)`, buffers persisten correctamente, cross-tenant
+  - Tests: CRUD, unicidad `(tenant_id, nombre)` y `(tenant_id, matricula)`, buffers persisten, cross-tenant con mutación de RLS
+  - **Fuera de alcance (registrado)**: `GET /chairs/{id}/utilization` (pertenece a C-07); RN-AG-06 se evalúa por turno en C-07; `tipo_practica` queda como `varchar(40)` hasta el catálogo de facturación.
 - **Dependencias**: C-03
 - **Governance**: MEDIO
 - **Leer antes**:
@@ -251,17 +262,27 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
   - `knowledge-base/05_reglas_de_negocio.md` §RN-AG-03, §RN-AG-06
 
 ### [C-06] `patients` — SPRINT
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` archivado 2026-11-12 — 37/37 tasks (`docs/patients.md`, `openspec/specs/clinic/patients/`)
 - **Scope**: Ficha de pacientes y número de historia clínica
-  - Modelo `patient` con `numero_historia_clinica` **secuencial y no reciclable** (RN-CLI-01)
-  - `GET/POST/PATCH /patients`, `GET /patients/:id`, `GET /patients/:id/timeline`
-  - Detección de duplicados por DNI + nombre normalizado antes de crear
-  - Búsqueda con índice trigram en `(apellido, nombre)`
-  - Alergias y `alerta_clinica` destacadas (aún sin UI clínica — la usa C-09)
-  - **Frontera dura**: recepción NO ve ni escribe historia clínica (RN-CMP-04)
-  - Migración `006_patients`
-  - Tests: secuencia de HCE no reciclable, dedupe, búsqueda, cross-tenant
-- **Dependencias**: C-03
+  - Modelos `patient` + `patient_counter` (contador por tenant, solo avanza)
+  - **HCE secuencial y no reciclable** (RN-CLI-01): upsert atómico dentro de la transacción del alta;
+    nunca `MAX + 1`; sin huecos si el alta falla; crece de 6 a 7 dígitos sin migración
+  - `GET/POST /patients`, `GET/PATCH /patients/{id}` (los 4 endpoints; **no** hay `DELETE`)
+  - Dedupe **duro** por DNI con índice único parcial (incluye pacientes dados de baja; `confirmar_duplicado`
+    no lo vence) y **blando** por nombre/teléfono normalizados, solo activos, máximo 5 candidatos
+  - Búsqueda insensible a mayúsculas y acentos sobre columnas normalizadas + GIN trigram, con
+    `%`/`_`/`\` escapados y `q` de hasta 60 caracteres
+  - **Frontera dura**: recepción NO ve ni escribe historia clínica (RN-CMP-04). `alergias` y
+    `alerta_clinica` existen en la tabla pero **no se exponen** hasta C-09 (PQ-17)
+  - Matriz RBAC: fila `patient` (owner `CRUD`; clinical_admin/front_desk `CRU`; profesional/asistente/
+    facturación `R`; resto —). Catálogo **19 recursos / 61 permisos**
+  - Migración `006_patients` (RLS `FORCE` en ambas tablas + `pg_trgm`)
+  - Pantalla `/pacientes` (buscador, tabla, alta/edición, diálogo de posible duplicado)
+  - Tests: 174 nuevos; pipeline 621 back / 96 unit front / 19 e2e; gate RLS con mutación
+  - **Fuera de alcance (registrado)**: `GET /patients/{id}/timeline` y la captura clínica de
+    `alergias`/`alerta_clinica` son C-09; `patient.delete` sin endpoint hasta C-13; portal del paciente,
+    `obra_social_id` con FK y auditoría de lecturas, post-deadline. Ver `docs/patients.md` §12.
+- **Dependencias**: C-03 (RBAC de C-04 para los permisos)
 - **Governance**: MEDIO
 - **Leer antes**:
   - `knowledge-base/04_modelo_de_datos.md` §Clínica (patient)
@@ -319,7 +340,10 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
 > (una funcionalidad: crear turno evitando solapamientos por profesional y sillón, con la
 > justificación en su proposal.md). Reprogramar, cancelar, lista de espera y disponibilidad
 > completa quedan post-deadline si no alcanza el tiempo.
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` **entregado parcial** — archivado el 2026-11-12 como
+  `agendar-turno-sin-solapamiento` (solo el alta con anti-solapamiento: `POST /api/v1/appointments`
+  + pantalla `/turnos/nuevo`). El resto del scope de C-07 (consulta de disponibilidad, reprogramar,
+  cancelar, check-in, lista de espera, auto-`no_asistio`) queda como C-07b post-deadline.
 - **Scope**: Turnos con doble recurso (profesional + sillón)
   - Modelo `appointment` + `waiting_list_entry`
   - **Restricción `EXCLUDE USING gist`** sobre `chair_id` y `professional_id` (RN-AG-02 — la garantía dura, no validación de app)
@@ -616,27 +640,31 @@ mismo orden — C-04, C-08, C-09…C-23 — priorizando facturación (C-14…C-1
 | **Total de changes** | 23 |
 | **Fases** | 9 (FASE 0 a FASE 8) |
 | **Sprint 1 dev — deadline 2026-10-23** | 6 changes (C-01…C-07, ruta del turno, ~11 días); META entregable: `agendar-turno-sin-solapamiento` |
-| **Backlog post-deadline** | 17 changes (C-04, C-08…C-23) |
+| **Backlog post-deadline** | 16 changes (C-08…C-23) |
 | **Changes CRITICO** | 8 (C-02, C-03, C-09, C-10, C-13, C-15, C-16, C-17) |
 | **Changes ALTO** | 6 (C-04, C-07, C-11, C-14, C-18, C-23) |
 | **Changes MEDIO** | 7 (C-01, C-05, C-06, C-12, C-19, C-20, C-21) |
 | **Changes BAJO** | 2 (C-08, C-22) |
 | **Requisitos MVP (los 10 imprescindibles)** | Todos cubiertos en FASE 1–7 |
-| **Post-deadline** | C-04, C-08…C-23 (facturación priorizada tras el sprint) |
-| **Archivados al 2026-11-05** | 2 (C-01, C-02) — mínimo del TPI cumplido |
+| **Post-deadline** | C-08…C-23 (facturación priorizada tras el sprint) |
+| **Archivados al 2026-11-12** | 7 (C-01…C-06 + `agendar-turno-sin-solapamiento`) — criterios 1, 2, 3 y 4 cubiertos; el 5 en las 4 pantallas sobre el backend real |
 
-### Primer change recomendado
+### Sprint completado — próximo paso
 
-```
-/opsx:propose C-03-auth-sessions
-```
+El sprint de la "ruta del turno" está **cerrado**: los 7 changes cuentan con los 4 gates
+(propuesto, aplicado, verificado, archivado). Lo que sigue es backlog post-deadline y **no**
+bloquea la entrega del TPI. El resto del scope de C-07 (consulta de disponibilidad, reprogramar,
+cancelar, check-in, lista de espera, auto-`no_asistio`) se propone como change nuevo —con su
+número asignado al momento de proponerlo— cuando se retome la agenda; después siguen C-08 y C-09.
 
 ### Advertencia de secuencia (1 dev)
 
-`C-01`, `C-02` y `C-03` son **estrictamente secuenciales** y bloquean todo lo demás. Con 1 dev no
-hay paralelismo: cada change termina (suite verde + test de aislamiento cross-tenant) antes de
-arrancar el siguiente. El sprint asume ~11 días efectivos; si C-07 queda en riesgo se recorta
-funcionalidad (lista de espera / recordatorios) antes que tocar RLS (C-02) o auditoría base (C-03).
+`C-01` → `C-02` → `C-03` → `C-04` → `C-05` → `C-06` → `agendar-turno-sin-solapamiento` están
+**archivados** y fueron estrictamente secuenciales: cada uno cerró con suite verde + test de
+aislamiento cross-tenant + gate de escenarios. Con 1 dev no hay paralelismo: el próximo change del
+backlog arranca solo cuando el anterior está archivado. El sprint del deadline (y del TPI) está
+completo; si algo se recorta por tiempo, se recorta funcionalidad (lista de espera / recordatorios)
+antes que tocar RLS (C-02) o auditoría base (C-03).
 
 ### Bloqueantes de negocio antes de ejecutar (no técnicos)
 

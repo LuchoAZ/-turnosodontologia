@@ -113,6 +113,7 @@ Es un input de pricing, no un bloqueador técnico.
 | **PQ-14** | ¿Se necesita exportación a formato contable (CSV con la estructura del contador del cliente)? | E10, US-090 | Product Owner |
 | **PQ-15** | ¿Cuándo entra el laboratorio externo (pedido de trabajo simple ya está en alcance parcial; integración completa no)? | Roadmap post-MVP | Product Owner |
 | **PQ-16** | ¿Se necesita versioning de plantillas de consentimiento por especialidad? | E5 (más complejo que una versión global) | Legal |
+| **PQ-17** | US-030 pide a recepción capturar `alergias` y `alerta_clinica`, pero RN-CMP-04 le prohíbe leer historia clínica. ¿Quién captura los datos clínicos de la ficha y con qué permiso? (C-06 persiste las columnas pero no las expone; se difiere a C-09) | C-09, ficha clínica | Tech Lead + Legal |
 
 ---
 

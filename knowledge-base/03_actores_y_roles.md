@@ -33,6 +33,7 @@ distintos sin duplicar cuentas. → DD-07
 | Configuración del tenant | C R U | R | R | R | R | R | — | — | — |
 | Sillones | C R U D | C R U | R | R | R | — | — | — | — |
 | Profesionales | C R U | C R U | R | R | R | — | — | — | — |
+| Pacientes | C R U D | C R U | R | R | C R U | R | — | — | — |
 | Usuarios y roles | C R U D | R | — | — | — | R | — | — | — |
 | **Historias clínicas** | R | R | **C R U** | **C R** | — | — | **R (propia)** | — | — |
 | Odontograma / periodontograma | R | R | **C R U** | **C R** | — | — | R (propio) | — | — |
