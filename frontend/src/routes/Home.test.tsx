@@ -50,4 +50,31 @@ describe('Home', () => {
     expect(await screen.findByRole('heading', { name: /gestión odontológica/i })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /equipo/i })).not.toBeInTheDocument()
   })
+
+  it('muestra el enlace Clínica con chair.read', async () => {
+    renderHome(['chair.read'])
+
+    expect(await screen.findByRole('link', { name: /clínica/i })).toBeInTheDocument()
+  })
+
+  it('oculta el enlace Clínica sin chair.read', async () => {
+    renderHome(['professional.read'])
+
+    expect(await screen.findByRole('heading', { name: /gestión odontológica/i })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /clínica/i })).not.toBeInTheDocument()
+  })
+
+  it('muestra el enlace Agendar turno con appointment.create', async () => {
+    renderHome(['appointment.create'])
+
+    const enlace = await screen.findByRole('link', { name: /agendar turno/i })
+    expect(enlace).toHaveAttribute('href', '/turnos/nuevo')
+  })
+
+  it('oculta el enlace Agendar turno sin appointment.create', async () => {
+    renderHome(['patient.read'])
+
+    expect(await screen.findByRole('heading', { name: /gestión odontológica/i })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /agendar turno/i })).not.toBeInTheDocument()
+  })
 })

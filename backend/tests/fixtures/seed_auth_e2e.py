@@ -23,6 +23,18 @@ vector público de RFC 4648 (``JBSWY3DPEHPK3PXP``). No hay secretos reales.
 Idempotente: reejecutarlo deja los mismos ids y la misma matriz de memberships,
 porque el seed **reemplaza** las memberships de esos tenants (los tests de
 Playwright cambian roles y sin el reset el segundo run arrancaría distinto).
+
+También siembra la configuración clínica del tenant A (C-05): un sillón y un
+profesional con la especialidad global ``Odontología general``. Las filas que
+crea el e2e se reconocen por el prefijo reservado ``E2E-`` y se borran antes de
+sembrar, porque el spec crea un sillón y un profesional nuevos en cada corrida
+(sin el reset, el segundo run chocaría con ``409 chair_name_taken``).
+
+C-06 agrega un paciente canónico (``E2E-Paciente, Demo``) con DNI reservado para
+que el e2e de ``/pacientes`` tenga un registro estable que buscar. El reset borra
+los pacientes con ``apellido LIKE 'E2E-%'`` **salvo** ese canónico (si se borrara,
+el id y la HCE cambiarían en cada arranque) y **nunca** toca ``patient_counter``:
+el número de historia clínica no se recicla (RN-CLI-01).
 """
 
 from __future__ import annotations
@@ -34,6 +46,8 @@ from uuid import UUID
 from app.config import Environment
 from app.core.crypto import encrypt_secret
 from app.domain.auth.passwords import hash_password
+from app.domain.patients.hce import formatear_numero
+from app.domain.patients.normalize import normalizar_telefono, normalizar_texto
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
@@ -56,6 +70,22 @@ OTHER_TENANT_EMAIL = "ajeno@example.test"
 
 #: Vector público de RFC 4648: sirve para TOTP pero no protege nada real.
 OWNER_TOTP_SECRET = "JBSWY3DPEHPK3PXP"
+
+#: Prefijo reservado para las filas que crea el e2e de C-05 (se borran al sembrar).
+E2E_PREFIX = "E2E-"
+
+#: Configuración clínica canónica del tenant A (C-05).
+SEED_CHAIR_NAME = "Sillón demo"
+SEED_PROFESSIONAL_MATRICULA = "MP-DEMO-1"
+SEED_SPECIALTY_NAME = "Odontología general"
+
+#: Paciente canónico del tenant A (C-06). El DNI es ficticio y está reservado:
+#: ningún spec debe usarlo para probar el `409 patient_dni_duplicado` (para eso
+#: crea su propia ficha con `apellido LIKE 'E2E-%'`, que el reset borra).
+SEED_PATIENT_NOMBRE = "Demo"
+SEED_PATIENT_APELLIDO = "E2E-Paciente"
+SEED_PATIENT_DNI = "99000111"
+SEED_PATIENT_TELEFONO = "11 5555-0199"
 
 #: La misma clave ficticia que exporta ``e2e_server._export_settings``.
 DEFAULT_MFA_ENCRYPTION_KEY = "m" * 32
@@ -93,6 +123,10 @@ class SeededAccount:
     password: str = USER_PASSWORD
     users: dict[str, UUID] = field(default_factory=dict)
     other_tenant_id: UUID | None = None
+    chair_id: UUID | None = None
+    professional_id: UUID | None = None
+    patient_id: UUID | None = None
+    patient_hce: str | None = None
 
 
 def _upsert_tenant(connection, *, slug: str, nombre: str, cuit: str) -> UUID:
@@ -185,6 +219,195 @@ def _upsert_user(
     return user_id
 
 
+def _reset_clinic_rows(connection, *, tenant_id: UUID) -> None:
+    """Borra lo que dejó el e2e anterior antes de volver a sembrar (idempotencia)."""
+    connection.execute(
+        text("DELETE FROM availability_rule WHERE tenant_id = :tenant_id"),
+        {"tenant_id": tenant_id},
+    )
+    connection.execute(
+        text(
+            """
+            DELETE FROM professional
+            WHERE tenant_id = :tenant_id AND matricula LIKE :prefix
+            """
+        ),
+        {"tenant_id": tenant_id, "prefix": f"{E2E_PREFIX}%"},
+    )
+    connection.execute(
+        text(
+            """
+            DELETE FROM chair
+            WHERE tenant_id = :tenant_id AND nombre LIKE :prefix
+            """
+        ),
+        {"tenant_id": tenant_id, "prefix": f"{E2E_PREFIX}%"},
+    )
+
+
+def _reset_patient_rows(connection, *, tenant_id: UUID) -> None:
+    """Borra los pacientes que dejó el e2e anterior, salvo el canónico (C-06).
+
+    El canónico se conserva: si se borrara, el id y el número de historia clínica
+    cambiarían en cada arranque y el spec no tendría una fila estable que buscar.
+    ``patient_counter`` **no** se toca: el número nunca se recicla (RN-CLI-01), así
+    que las altas del e2e siguen tomando números nuevos aunque sus filas se borren.
+    """
+    connection.execute(
+        text(
+            """
+            DELETE FROM patient
+            WHERE tenant_id = :tenant_id
+              AND apellido LIKE :prefix
+              AND (dni IS DISTINCT FROM :demo_dni)
+            """
+        ),
+        {
+            "tenant_id": tenant_id,
+            "prefix": f"{E2E_PREFIX}%",
+            "demo_dni": SEED_PATIENT_DNI,
+        },
+    )
+
+
+def _upsert_patient(connection, *, tenant_id: UUID) -> tuple[UUID, str]:
+    """Crea el paciente canónico del e2e o lo deja con sus datos estables.
+
+    La HCE solo se reserva en el alta: si la ficha ya existe, se conserva su
+    número. Así dos corridas del seed dejan el mismo paciente con la misma HCE.
+    """
+    existing = connection.execute(
+        text(
+            """
+            SELECT id, numero_historia_clinica FROM patient
+            WHERE tenant_id = :tenant_id AND dni = :dni
+            """
+        ),
+        {"tenant_id": tenant_id, "dni": SEED_PATIENT_DNI},
+    ).one_or_none()
+
+    if existing is not None:
+        connection.execute(
+            text(
+                """
+                UPDATE patient
+                   SET nombre = :nombre,
+                       apellido = :apellido,
+                       nombre_norm = :nombre_norm,
+                       apellido_norm = :apellido_norm,
+                       telefono = :telefono,
+                       telefono_norm = :telefono_norm,
+                       activo = true,
+                       deleted_at = NULL
+                 WHERE id = :id
+                """
+            ),
+            {
+                "id": existing.id,
+                "nombre": SEED_PATIENT_NOMBRE,
+                "apellido": SEED_PATIENT_APELLIDO,
+                "nombre_norm": normalizar_texto(SEED_PATIENT_NOMBRE),
+                "apellido_norm": normalizar_texto(SEED_PATIENT_APELLIDO),
+                "telefono": SEED_PATIENT_TELEFONO,
+                "telefono_norm": normalizar_telefono(SEED_PATIENT_TELEFONO),
+            },
+        )
+        return existing.id, existing.numero_historia_clinica
+
+    secuencia = connection.execute(
+        text(
+            """
+            INSERT INTO patient_counter (tenant_id, ultimo_numero)
+            VALUES (:tenant_id, 1)
+            ON CONFLICT (tenant_id) DO UPDATE
+              SET ultimo_numero = patient_counter.ultimo_numero + 1,
+                  updated_at = now()
+            RETURNING ultimo_numero
+            """
+        ),
+        {"tenant_id": tenant_id},
+    ).scalar_one()
+    numero = formatear_numero(int(secuencia))
+
+    patient_id = connection.execute(
+        text(
+            """
+            INSERT INTO patient
+                (tenant_id, dni, nombre, apellido, apellido_norm, nombre_norm,
+                 fecha_nacimiento, sexo, telefono, telefono_norm, email,
+                 domicilio, numero_historia_clinica, activo)
+            VALUES
+                (:tenant_id, :dni, :nombre, :apellido, :apellido_norm, :nombre_norm,
+                 DATE '1985-07-12', 'no_declara', :telefono, :telefono_norm,
+                 'demo.paciente@example.com',
+                 '{"calle": "Av. Demo", "numero": "123", "localidad": "CABA"}'::jsonb,
+                 :numero, true)
+            RETURNING id
+            """
+        ),
+        {
+            "tenant_id": tenant_id,
+            "dni": SEED_PATIENT_DNI,
+            "nombre": SEED_PATIENT_NOMBRE,
+            "apellido": SEED_PATIENT_APELLIDO,
+            "apellido_norm": normalizar_texto(SEED_PATIENT_APELLIDO),
+            "nombre_norm": normalizar_texto(SEED_PATIENT_NOMBRE),
+            "telefono": SEED_PATIENT_TELEFONO,
+            "telefono_norm": normalizar_telefono(SEED_PATIENT_TELEFONO),
+            "numero": numero,
+        },
+    ).scalar_one()
+    return patient_id, numero
+
+
+def _upsert_chair(connection, *, tenant_id: UUID) -> UUID:
+    return connection.execute(
+        text(
+            """
+            INSERT INTO chair (tenant_id, nombre, tipo, activo)
+            VALUES (:tenant_id, :nombre, 'consultorio', true)
+            ON CONFLICT ON CONSTRAINT uq_chair_tenant_nombre DO UPDATE
+               SET tipo = EXCLUDED.tipo, activo = true
+            RETURNING id
+            """
+        ),
+        {"tenant_id": tenant_id, "nombre": SEED_CHAIR_NAME},
+    ).scalar_one()
+
+
+def _upsert_professional(connection, *, tenant_id: UUID, user_id: UUID) -> UUID:
+    specialty_id = connection.execute(
+        text(
+            """
+            SELECT id FROM specialty
+            WHERE nombre = :nombre AND tenant_id IS NULL
+            """
+        ),
+        {"nombre": SEED_SPECIALTY_NAME},
+    ).scalar_one()
+    return connection.execute(
+        text(
+            """
+            INSERT INTO professional
+                (tenant_id, user_id, nombre, apellido, matricula, especialidad_id,
+                 duracion_default_min, porcentaje_liquidacion, color_agenda, activo)
+            VALUES
+                (:tenant_id, :user_id, 'Paula', 'Profesional', :matricula,
+                 :especialidad_id, 30, 40, '#2563EB', true)
+            ON CONFLICT ON CONSTRAINT uq_professional_tenant_matricula DO UPDATE
+               SET user_id = EXCLUDED.user_id, activo = true
+            RETURNING id
+            """
+        ),
+        {
+            "tenant_id": tenant_id,
+            "user_id": user_id,
+            "matricula": SEED_PROFESSIONAL_MATRICULA,
+            "especialidad_id": specialty_id,
+        },
+    ).scalar_one()
+
+
 def seed(
     engine: Engine,
     *,
@@ -212,6 +435,8 @@ def seed(
             text("DELETE FROM membership WHERE tenant_id IN (:a, :b)"),
             {"a": tenant_id, "b": other_tenant_id},
         )
+        _reset_clinic_rows(connection, tenant_id=tenant_id)
+        _reset_patient_rows(connection, tenant_id=tenant_id)
 
         users: dict[str, UUID] = {}
         for user in FLOW_USERS:
@@ -253,10 +478,20 @@ def seed(
             },
         )
 
+        chair_id = _upsert_chair(connection, tenant_id=tenant_id)
+        professional_id = _upsert_professional(
+            connection, tenant_id=tenant_id, user_id=users[PROFESSIONAL_EMAIL]
+        )
+        patient_id, patient_hce = _upsert_patient(connection, tenant_id=tenant_id)
+
     return SeededAccount(
         tenant_id=tenant_id,
         user_id=users[USER_EMAIL],
         password=password,
         users=users,
         other_tenant_id=other_tenant_id,
+        chair_id=chair_id,
+        professional_id=professional_id,
+        patient_id=patient_id,
+        patient_hce=patient_hce,
     )

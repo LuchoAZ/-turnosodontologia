@@ -12,7 +12,14 @@ import os
 from logging.config import fileConfig
 
 from alembic import context
-from app.models import auth, catalog, tenancy  # noqa: F401  (registra las tablas)
+from app.models import (  # noqa: F401  (registra las tablas)
+    agenda,
+    auth,
+    catalog,
+    clinic,
+    patients,
+    tenancy,
+)
 from app.models.base import Base
 from sqlalchemy import engine_from_config, pool
 

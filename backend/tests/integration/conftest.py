@@ -1,8 +1,9 @@
 ﻿from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 from uuid import UUID, uuid4
 
@@ -13,6 +14,8 @@ from app.config import Environment, Settings, load_config
 from app.core.crypto import encrypt_secret
 from app.domain.auth.passwords import hash_password
 from app.domain.auth.tokens import hash_token, new_opaque_token
+from app.domain.patients.hce import formatear_numero
+from app.domain.patients.normalize import normalizar_telefono, normalizar_texto
 from app.main import create_app
 from fastapi.testclient import TestClient
 from sqlalchemy import bindparam, create_engine, text
@@ -255,6 +258,226 @@ class Seeder:
                 },
             )
 
+    def specialty(self, nombre: str = "Odontología general") -> UUID:
+        """Id de una especialidad global sembrada por 002."""
+        with self.engine.connect() as connection:
+            return connection.execute(
+                text(
+                    """
+                    SELECT id FROM specialty
+                    WHERE nombre = :nombre AND tenant_id IS NULL
+                    """
+                ),
+                {"nombre": nombre},
+            ).scalar_one()
+
+    def chair(
+        self,
+        tenant_id: UUID,
+        nombre: str = "Sillón 1",
+        tipo: str = "consultorio",
+        *,
+        activo: bool = True,
+        ubicacion: str | None = None,
+        equipamiento: dict[str, object] | None = None,
+    ) -> UUID:
+        chair_id = uuid4()
+        with self.engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO chair
+                        (id, tenant_id, nombre, tipo, activo, ubicacion, equipamiento)
+                    VALUES (:id, :tenant_id, :nombre, CAST(:tipo AS chair_tipo), :activo,
+                            :ubicacion, CAST(:equipamiento AS jsonb))
+                    """
+                ),
+                {
+                    "id": chair_id,
+                    "tenant_id": tenant_id,
+                    "nombre": nombre,
+                    "tipo": tipo,
+                    "activo": activo,
+                    "ubicacion": ubicacion,
+                    "equipamiento": json.dumps(equipamiento or {}),
+                },
+            )
+        return chair_id
+
+    def professional(
+        self,
+        tenant_id: UUID,
+        *,
+        nombre: str = "Paula",
+        apellido: str = "Pérez",
+        matricula: str | None = None,
+        especialidad_id: UUID | None = None,
+        user_id: UUID | None = None,
+        duracion_default_min: int = 30,
+        porcentaje_liquidacion: float = 40,
+        color_agenda: str = "#2563EB",
+        activo: bool = True,
+    ) -> UUID:
+        professional_id = uuid4()
+        with self.engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO professional
+                        (id, tenant_id, user_id, nombre, apellido, matricula, especialidad_id,
+                         porcentaje_liquidacion, duracion_default_min, color_agenda, activo)
+                    VALUES (:id, :tenant_id, :user_id, :nombre, :apellido, :matricula,
+                            :especialidad_id, :porcentaje, :duracion, :color, :activo)
+                    """
+                ),
+                {
+                    "id": professional_id,
+                    "tenant_id": tenant_id,
+                    "user_id": user_id,
+                    "nombre": nombre,
+                    "apellido": apellido,
+                    "matricula": matricula or f"MP-{uuid4().hex[:6]}",
+                    "especialidad_id": especialidad_id or self.specialty(),
+                    "porcentaje": porcentaje_liquidacion,
+                    "duracion": duracion_default_min,
+                    "color": color_agenda,
+                    "activo": activo,
+                },
+            )
+        return professional_id
+
+    def availability_rule(
+        self,
+        tenant_id: UUID,
+        *,
+        professional_id: UUID | None = None,
+        chair_id: UUID | None = None,
+        dia_semana: int = 1,
+        hora_inicio: time = time(9, 0),
+        hora_fin: time = time(12, 0),
+        slot_min: int = 30,
+        buffer_previo_min: int = 0,
+        buffer_posterior_min: int = 0,
+        fecha_desde: date = date(2026, 11, 16),
+        fecha_hasta: date | None = None,
+        tipo_practica: str | None = None,
+    ) -> UUID:
+        rule_id = uuid4()
+        with self.engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO availability_rule
+                        (id, tenant_id, professional_id, chair_id, dia_semana, hora_inicio,
+                         hora_fin, slot_min, buffer_previo_min, buffer_posterior_min,
+                         fecha_desde, fecha_hasta, tipo_practica)
+                    VALUES (:id, :tenant_id, :professional_id, :chair_id, :dia_semana,
+                            :hora_inicio, :hora_fin, :slot_min, :buffer_previo,
+                            :buffer_posterior, :fecha_desde, :fecha_hasta, :tipo_practica)
+                    """
+                ),
+                {
+                    "id": rule_id,
+                    "tenant_id": tenant_id,
+                    "professional_id": professional_id,
+                    "chair_id": chair_id,
+                    "dia_semana": dia_semana,
+                    "hora_inicio": hora_inicio,
+                    "hora_fin": hora_fin,
+                    "slot_min": slot_min,
+                    "buffer_previo": buffer_previo_min,
+                    "buffer_posterior": buffer_posterior_min,
+                    "fecha_desde": fecha_desde,
+                    "fecha_hasta": fecha_hasta,
+                    "tipo_practica": tipo_practica,
+                },
+            )
+        return rule_id
+
+    def patient(
+        self,
+        tenant_id: UUID,
+        *,
+        nombre: str = "Ana",
+        apellido: str = "Pérez",
+        telefono: str = "11 5555-1234",
+        dni: str | None = None,
+        numero_historia_clinica: str | None = None,
+        email: str | None = None,
+        sexo: str | None = None,
+        fecha_nacimiento: date | None = None,
+        domicilio: dict[str, object] | None = None,
+        obra_social_id: UUID | None = None,
+        user_id: UUID | None = None,
+        activo: bool = True,
+        deleted_at: datetime | None = None,
+        alergias: str | None = None,
+        alerta_clinica: bool = False,
+    ) -> UUID:
+        """Siembra un paciente como superusuario.
+
+        La HCE sale de ``patient_counter`` con el mismo upsert atómico que usa el
+        servicio (D4), así los fixtures respetan el contador real y los tests de
+        secuencia son deterministas. ``*_norm`` se calculan con el normalizador
+        de dominio: no se duplica la regla en el test.
+        """
+        patient_id = uuid4()
+        with self.engine.begin() as connection:
+            if numero_historia_clinica is None:
+                secuencia = connection.execute(
+                    text(
+                        """
+                        INSERT INTO patient_counter (tenant_id, ultimo_numero)
+                        VALUES (:tenant_id, 1)
+                        ON CONFLICT (tenant_id) DO UPDATE
+                          SET ultimo_numero = patient_counter.ultimo_numero + 1,
+                              updated_at = now()
+                        RETURNING ultimo_numero
+                        """
+                    ),
+                    {"tenant_id": tenant_id},
+                ).scalar_one()
+                numero_historia_clinica = formatear_numero(secuencia)
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO patient
+                        (id, tenant_id, user_id, dni, nombre, apellido, apellido_norm,
+                         nombre_norm, fecha_nacimiento, sexo, telefono, telefono_norm,
+                         email, domicilio, obra_social_id, numero_historia_clinica,
+                         alergias, alerta_clinica, activo, deleted_at)
+                    VALUES (:id, :tenant_id, :user_id, :dni, :nombre, :apellido, :apellido_norm,
+                            :nombre_norm, :fecha_nacimiento, CAST(:sexo AS sexo_paciente),
+                            :telefono, :telefono_norm, :email, CAST(:domicilio AS jsonb),
+                            :obra_social_id, :numero_historia_clinica, :alergias,
+                            :alerta_clinica, :activo, :deleted_at)
+                    """
+                ),
+                {
+                    "id": patient_id,
+                    "tenant_id": tenant_id,
+                    "user_id": user_id,
+                    "dni": dni,
+                    "nombre": nombre,
+                    "apellido": apellido,
+                    "apellido_norm": normalizar_texto(apellido),
+                    "nombre_norm": normalizar_texto(nombre),
+                    "fecha_nacimiento": fecha_nacimiento,
+                    "sexo": sexo,
+                    "telefono": telefono,
+                    "telefono_norm": normalizar_telefono(telefono),
+                    "email": email,
+                    "domicilio": json.dumps(domicilio) if domicilio is not None else None,
+                    "obra_social_id": obra_social_id,
+                    "numero_historia_clinica": numero_historia_clinica,
+                    "alergias": alergias,
+                    "alerta_clinica": alerta_clinica,
+                    "activo": activo,
+                    "deleted_at": deleted_at,
+                },
+            )
+        return patient_id
+
     def session(
         self,
         tenant_id: UUID,
@@ -352,6 +575,65 @@ class Seeder:
                     "key_version": key_version,
                 },
             )
+
+    def appointment(
+        self,
+        tenant_id: UUID,
+        *,
+        professional_id: UUID,
+        chair_id: UUID,
+        inicio: datetime,
+        duracion_min: int = 30,
+        buffer_previo_min: int = 0,
+        buffer_posterior_min: int = 0,
+        estado: str = "pendiente",
+        origen: str = "recepcion",
+        patient_id: UUID | None = None,
+        creado_por: UUID | None = None,
+        tipo_practica: str | None = None,
+    ) -> UUID:
+        """Turno ya existente para probar el solape y RN-AG-10.
+
+        ``fin`` se deriva de ``duracion_min`` (nunca se pasa a mano): es lo que hace
+        el servicio y así el setup no crea filas que la API no podría crear. El
+        default ``patient_id = None`` es un turno sin paciente identificado: los
+        tests de solape de recursos no deben disparar RN-AG-10 de rebote.
+        """
+        appointment_id = uuid4()
+        fin = inicio + timedelta(minutes=duracion_min)
+        with self.engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO appointment
+                        (id, tenant_id, patient_id, professional_id, chair_id, inicio, fin,
+                         duracion_min, buffer_previo_min, buffer_posterior_min, estado,
+                         origen, creado_por, tipo_practica)
+                    VALUES
+                        (:id, :tenant_id, :patient_id, :professional_id, :chair_id, :inicio,
+                         :fin, :duracion_min, :buffer_previo_min, :buffer_posterior_min,
+                         CAST(:estado AS appointment_estado),
+                         CAST(:origen AS appointment_origen), :creado_por, :tipo_practica)
+                    """
+                ),
+                {
+                    "id": appointment_id,
+                    "tenant_id": tenant_id,
+                    "patient_id": patient_id,
+                    "professional_id": professional_id,
+                    "chair_id": chair_id,
+                    "inicio": inicio,
+                    "fin": fin,
+                    "duracion_min": duracion_min,
+                    "buffer_previo_min": buffer_previo_min,
+                    "buffer_posterior_min": buffer_posterior_min,
+                    "estado": estado,
+                    "origen": origen,
+                    "creado_por": creado_por,
+                    "tipo_practica": tipo_practica,
+                },
+            )
+        return appointment_id
 
     def set_membership_active(
         self, tenant_id: UUID, user_id: UUID, *, activo: bool

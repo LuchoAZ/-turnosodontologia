@@ -1,7 +1,8 @@
 """Fidelidad de la matriz RBAC contra `knowledge-base/03_actores_y_roles.md` (D1).
 
-La tabla de abajo es una transcripción **literal** de las líneas 33-48 de la KB
-(9 columnas de rol, 16 filas de recurso) más las 7 restricciones horizontales.
+La tabla de abajo es una transcripción **literal** de la sección
+"Recursos estructurales" de la KB (9 columnas de rol, 17 filas de recurso, con la
+fila `patient` que agrega C-06) más las 7 restricciones horizontales.
 No importa nada de la implementación para construirla: si `matrix.py` cambia la
 matriz, este test falla.
 """
@@ -27,6 +28,7 @@ KB_TABLE: tuple[tuple[str, ...], ...] = (
     ("tenant_settings", "CRU", "R", "R", "R", "R", "R", "—", "—", "—"),
     ("chair", "CRUD", "CRU", "R", "R", "R", "—", "—", "—", "—"),
     ("professional", "CRU", "CRU", "R", "R", "R", "—", "—", "—", "—"),
+    ("patient", "CRUD", "CRU", "R", "R", "CRU", "R", "—", "—", "—"),
     ("team", "CRUDT", "R", "—", "—", "—", "R", "—", "—", "—"),
     ("clinical_record", "R", "R", "CRU", "CR", "—", "—", "*R", "—", "—"),
     ("chart", "R", "R", "CRUF", "CR", "—", "—", "*R", "—", "—"),
@@ -142,12 +144,47 @@ def test_los_permisos_propios_no_se_mezclan_con_los_plenos() -> None:
 
 
 def test_catalogo_de_recursos_y_enum_coherentes() -> None:
-    assert len(DOMAIN_RESOURCES) == 18
+    assert len(DOMAIN_RESOURCES) == 19
     assert set(RESOURCE_ACTIONS) == set(DOMAIN_RESOURCES)
     assert {permission.split(".")[0] for permission in (p.value for p in Permission)} == set(
         DOMAIN_RESOURCES
     )
-    assert len(Permission) == 57
+    assert len(Permission) == 61
+
+
+def test_pacientes_respetan_la_celda_de_cada_rol() -> None:
+    """S10.1/S10.2: la fila `patient` de la KB traducida a permisos."""
+    owner = ROLE_PERMISSIONS[Role.owner]
+    front_desk = ROLE_PERMISSIONS[Role.front_desk]
+
+    assert {
+        Permission.patient_create,
+        Permission.patient_read,
+        Permission.patient_update,
+        Permission.patient_delete,
+    } <= owner
+    assert Permission.patient_delete not in front_desk
+    assert {
+        Permission.patient_create,
+        Permission.patient_read,
+        Permission.patient_update,
+    } <= front_desk
+    assert RESOURCE_ACTIONS["patient"] == frozenset({"create", "read", "update", "delete"})
+    for role in (Role.patient, Role.external_lab, Role.accountant):
+        assert not {
+            permission
+            for permission in ROLE_PERMISSIONS[role]
+            if permission.value.startswith("patient.")
+        }
+
+
+def test_resolve_permissions_no_concede_pacientes_por_defecto() -> None:
+    """S10.3: la resolución falla cerrado y nunca regala `patient.read`."""
+    assert Permission.patient_read not in resolve_permissions([])
+    assert Permission.patient_read not in resolve_permissions(["rol_inexistente"])
+    # Control positivo: el permiso existe y se obtiene solo del rol que lo tiene.
+    assert Permission.patient_read in resolve_permissions([Role.assistant])
+    assert Permission.patient_update not in resolve_permissions([Role.assistant])
 
 
 def test_ningun_rol_tiene_lectura_de_auditoria() -> None:

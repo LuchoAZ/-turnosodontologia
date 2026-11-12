@@ -18,6 +18,21 @@ export default function Home() {
           Equipo
         </Link>
       ) : null}
+      {hasPermission('chair.read') ? (
+        <Link className="text-sm underline" to="/clinica">
+          Clínica
+        </Link>
+      ) : null}
+      {hasPermission('patient.read') ? (
+        <Link className="text-sm underline" to="/pacientes">
+          Pacientes
+        </Link>
+      ) : null}
+      {hasPermission('appointment.create') ? (
+        <Link className="text-sm underline" to="/turnos/nuevo">
+          Agendar turno
+        </Link>
+      ) : null}
       <Button variant="outline" onClick={() => void signOut()}>
         Salir
       </Button>

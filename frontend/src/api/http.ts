@@ -19,14 +19,36 @@ export class ApiError extends Error {
   readonly status: number
   readonly code: string | null
   readonly retryAfter: number | null
+  /**
+   * Cuerpo crudo del error, ya parseado. Los `409` de dominio traen datos que la
+   * UI necesita (por ejemplo `candidatos` en `patient_posible_duplicado`) y que
+   * no pueden vivir en `code` ni en `message`.
+   */
+  readonly payload: unknown
 
-  constructor(status: number, code: string | null, message: string, retryAfter: number | null = null) {
+  constructor(
+    status: number,
+    code: string | null,
+    message: string,
+    retryAfter: number | null = null,
+    payload: unknown = null,
+  ) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.code = code
     this.retryAfter = retryAfter
+    this.payload = payload
   }
+}
+
+/**
+ * Normaliza cualquier excepción a `ApiError`: los componentes no distinguen
+ * "falló la red" de "el backend dijo 409", solo leen `code` y `message`.
+ */
+export function asApiError(error: unknown): ApiError {
+  if (error instanceof ApiError) return error
+  return new ApiError(0, null, 'Ocurrió un error inesperado.')
 }
 
 type UnauthorizedHandler = () => void
@@ -84,8 +106,10 @@ async function parseBody<T>(response: Response): Promise<T> {
 async function toApiError(response: Response): Promise<ApiError> {
   let code: string | null = null
   let message = response.statusText || 'La petición falló.'
+  let payload: unknown = null
   try {
     const body = (await response.json()) as { code?: unknown; message?: unknown }
+    payload = body
     if (typeof body.code === 'string') code = body.code
     if (typeof body.message === 'string' && body.message) message = body.message
   } catch {
@@ -98,6 +122,7 @@ async function toApiError(response: Response): Promise<ApiError> {
     code,
     message,
     retryAfter !== null && Number.isFinite(retryAfter) ? retryAfter : null,
+    payload,
   )
 }
 

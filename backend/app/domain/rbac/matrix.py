@@ -34,7 +34,7 @@ from app.models.tenancy import Role
 
 
 class Permission(StrEnum):
-    """Los 57 permisos atómicos, nombrados ``recurso.accion``."""
+    """Los 61 permisos atómicos, nombrados ``recurso.accion``."""
 
     # tenant_settings — Configuración del tenant
     tenant_settings_create = "tenant_settings.create"
@@ -49,6 +49,11 @@ class Permission(StrEnum):
     professional_create = "professional.create"
     professional_read = "professional.read"
     professional_update = "professional.update"
+    # patient — Ficha demográfica del paciente (C-06)
+    patient_create = "patient.create"
+    patient_read = "patient.read"
+    patient_update = "patient.update"
+    patient_delete = "patient.delete"
     # team — Usuarios y roles (CRUD de memberships)
     team_create = "team.create"
     team_read = "team.read"
@@ -122,7 +127,7 @@ _LETTER_ACTIONS: Final[dict[str, str]] = {
 }
 _OWN_ACTIONS: Final[dict[str, str]] = {"C": "create_own", "R": "read_own"}
 
-# Transcripción de la KB (03 § RBAC, líneas 33-48), en el orden de la tabla.
+# Transcripción de la KB (03 § RBAC § Recursos estructurales), en el orden de la tabla.
 # Columnas: owner, clinical_admin, professional, assistant, front_desk, billing,
 # patient, external_lab, accountant. La fila "Usuarios y roles" aparece
 # desdoblada en ``team`` (CRUD de memberships) y ``ownership`` (transferencia),
@@ -138,6 +143,18 @@ _KB_MATRIX: Final[tuple[tuple[str, ...], ...]] = (
         "R",
         "R",
         _NO_ACCESS,
+        _NO_ACCESS,
+        _NO_ACCESS,
+        _NO_ACCESS,
+    ),
+    (
+        "patient",
+        "CRUD",
+        "CRU",
+        "R",
+        "R",
+        "CRU",
+        "R",
         _NO_ACCESS,
         _NO_ACCESS,
         _NO_ACCESS,
@@ -370,7 +387,7 @@ ROLE_PERMISSIONS: Final[dict[Role, frozenset[Permission]]] = _build_role_permiss
 #: Acciones declaradas por recurso, independientes de quién las tenga.
 RESOURCE_ACTIONS: Final[dict[str, frozenset[str]]] = _build_resource_actions()
 
-#: Los 18 recursos del dominio, en el orden de la KB.
+#: Los 19 recursos del dominio, en el orden de la KB.
 DOMAIN_RESOURCES: Final[tuple[str, ...]] = tuple(RESOURCE_ACTIONS)
 
 

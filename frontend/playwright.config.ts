@@ -34,6 +34,11 @@ export default defineConfig({
   fullyParallel: true,
   retries: process.env.CI ? 1 : 0,
   reporter: 'list',
+  // 5 s (default) es corto para el primer login de la corrida: el backend real
+  // arranca en frío (uvicorn + pool + argon2) y cuatro workers lo golpean a la
+  // vez. Con 10 s el gate no se vuelve flaky; la app sigue respondiendo en <1 s
+  // una vez tibia.
+  expect: { timeout: 10_000 },
   use: {
     baseURL: process.env.E2E_BASE_URL ?? WEB_URL,
     trace: 'on-first-retry',

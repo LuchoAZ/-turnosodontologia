@@ -25,6 +25,7 @@ dependencies = [
     "opentelemetry-exporter-otlp-proto-http>=1.25",
     "opentelemetry-instrumentation-fastapi>=0.46b0",
     "sentry-sdk[fastapi]>=2.0",
+    "email-validator>=2.3.0",
 ]
 
 [dependency-groups]
